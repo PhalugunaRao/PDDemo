@@ -106,6 +106,12 @@ export const Sidebar = ({ isOpen, onClose }) => {
                 <span className="text-sm font-bold text-blue-600 tracking-tight">Accepting Bookings</span>
              </div>
           </Card>
+          <button
+            onClick={handleLogout}
+            className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </button>
         </div>
       </aside>
     </>

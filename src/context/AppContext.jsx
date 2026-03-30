@@ -174,9 +174,14 @@ export const AppProvider = ({ children }) => {
   }, [appointments]);
 
   // Auth
-  const login = (email, password) => {
+  const login = (email, password, payload = {}) => {
     if (email === 'admin@provider.com' && password === 'mediSync@demo2025') {
-      setUser({ name: 'Dr. Vikram', role: 'Provider Admin', email: 'vikram.v@provider.com' });
+      setUser({
+        name: 'Dr. Vikram',
+        role: 'Provider Admin',
+        email: 'vikram.v@provider.com',
+        loginType: payload.login_type || 'PAN_INDIA',
+      });
       toast.success('Welcome to MediSync PD');
       return true;
     }
