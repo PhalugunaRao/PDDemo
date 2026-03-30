@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -18,6 +18,7 @@ import { useAppContext } from '../context/AppContext';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { format, parseISO } from 'date-fns';
+import { useSearchParams } from 'react-router-dom';
 
 const TabItem = ({ id, label, icon: Icon, active, onClick }) => (
   <button
@@ -35,6 +36,7 @@ const TabItem = ({ id, label, icon: Icon, active, onClick }) => (
 
 export const AppointmentsPage = () => {
   const { appointments, updateAppointmentStatus } = useAppContext();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('Pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmedDateFilter, setConfirmedDateFilter] = useState('');
@@ -45,6 +47,18 @@ export const AppointmentsPage = () => {
   const isConfirmationPendingTab = activeTab === 'Pending';
   const isConfirmedTab = activeTab === 'Confirmed';
   const isPartialTab = activeTab === 'Partial';
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const tabMap = {
+      today: 'Today',
+      'report-pending': 'Reports',
+    };
+
+    if (tabParam && tabMap[tabParam]) {
+      setActiveTab(tabMap[tabParam]);
+    }
+  }, [searchParams]);
 
   const openRemarksDialog = (appointmentId, status, isMandatory) => {
     setPendingAction({ appointmentId, status, isMandatory });

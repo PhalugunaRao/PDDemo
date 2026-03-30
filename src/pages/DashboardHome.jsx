@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   Upload, 
@@ -15,8 +16,11 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const KPICard = ({ title, value, icon: Icon, colorClass, iconColor }) => (
-  <Card className="p-6 border-none shadow-sm hover:shadow-md transition-shadow bg-white rounded-xl">
+const KPICard = ({ title, value, icon: Icon, colorClass, iconColor, onClick }) => (
+  <Card
+    className={`p-6 border-none shadow-sm hover:shadow-md transition-shadow bg-white rounded-xl ${onClick ? 'cursor-pointer hover:-translate-y-0.5 transition-all' : ''}`}
+    onClick={onClick}
+  >
     <div className="flex items-center gap-4">
       <div className={`w-12 h-12 ${colorClass} rounded-lg flex items-center justify-center`}>
         <Icon className={`w-6 h-6 ${iconColor}`} />
@@ -47,6 +51,8 @@ const ActionItem = ({ icon: Icon, title, subtitle, color, statusIcon: StatusIcon
 );
 
 export const DashboardHome = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-8 pb-10">
       {/* KPI Cards Row */}
@@ -57,6 +63,7 @@ export const DashboardHome = () => {
           icon={Calendar} 
           colorClass="bg-blue-50" 
           iconColor="text-blue-600" 
+          onClick={() => navigate('/appointments?tab=today')}
         />
         <KPICard 
           title="Reports Pending" 
@@ -64,6 +71,7 @@ export const DashboardHome = () => {
           icon={Upload} 
           colorClass="bg-amber-50" 
           iconColor="text-amber-500" 
+          onClick={() => navigate('/appointments?tab=report-pending')}
         />
         <KPICard 
           title="SLA Breaches" 
