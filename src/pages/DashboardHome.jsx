@@ -87,7 +87,7 @@ export const DashboardHome = () => {
     const trimmedRemarks = remarks.trim();
 
     if (pendingAction?.isMandatory && !trimmedRemarks) {
-      setRemarksError('Remarks are required to confirm this appointment.');
+      setRemarksError('Remarks are mandatory before rejecting.');
       return;
     }
 
@@ -225,6 +225,7 @@ export const DashboardHome = () => {
               <thead className="bg-gray-50/80 border-b border-gray-100">
                 <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                   <th className="px-4 py-4">Date & Time</th>
+                  <th className="px-4 py-4">Action</th>
                   <th className="px-4 py-4">Appointment ID</th>
                   <th className="px-4 py-4">Branch</th>
                   <th className="px-4 py-4">Dr. Name</th>
@@ -235,7 +236,6 @@ export const DashboardHome = () => {
                   <th className="px-4 py-4">Customer Details</th>
                   <th className="px-4 py-4">Package Name</th>
                   <th className="px-4 py-4">Collection Address</th>
-                  <th className="px-4 py-4">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -249,6 +249,49 @@ export const DashboardHome = () => {
                         <div className="flex flex-col">
                           <span className="font-bold text-gray-900">{format(parseISO(appointment.date), 'dd MMM yyyy')}</span>
                           <span className="text-gray-400 text-[10px] mt-1">{format(parseISO(appointment.date), 'hh:mm a')}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          {normalizedVendorStatus === 'NEW' ? (
+                            <>
+                              <button
+                                onClick={() => openRemarksDialog(appointment.id, 'confirmed', false)}
+                                className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 shadow-sm shadow-green-100 transition-all active:scale-90"
+                                title="Confirm"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => openRemarksDialog(appointment.id, 'rejected', true)}
+                                className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 shadow-sm shadow-red-100 transition-all active:scale-90"
+                                title="Reject"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </>
+                          ) : normalizedVendorStatus === 'CONFIRMED' ? (
+                            <>
+                              <button
+                                onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95"
+                                title="Completed"
+                              >
+                                <Check className="w-3.5 h-3.5" /> Completed
+                              </button>
+                              <button
+                                onClick={() => updateAppointmentStatus(appointment.id, 'no-show')}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-md shadow-red-100 active:scale-95"
+                                title="No Show"
+                              >
+                                <X className="w-3.5 h-3.5" /> No Show
+                              </button>
+                            </>
+                          ) : (
+                            <button className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95">
+                              <Upload className="w-3.5 h-3.5" /> Upload Reports
+                            </button>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-4 font-black text-blue-600 uppercase tracking-tighter">{appointment.id}</td>
@@ -300,49 +343,6 @@ export const DashboardHome = () => {
                       <td className="px-4 py-4 text-gray-500 max-w-[220px] truncate">
                         {appointment.address && appointment.address !== ', ' ? appointment.address : '-------------------'}
                       </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          {normalizedVendorStatus === 'NEW' ? (
-                            <>
-                              <button
-                                onClick={() => openRemarksDialog(appointment.id, 'confirmed', true)}
-                                className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 shadow-sm shadow-green-100 transition-all active:scale-90"
-                                title="Confirm"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => openRemarksDialog(appointment.id, 'rejected', false)}
-                                className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 shadow-sm shadow-red-100 transition-all active:scale-90"
-                                title="Reject"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </>
-                          ) : normalizedVendorStatus === 'CONFIRMED' ? (
-                            <>
-                              <button
-                                onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95"
-                                title="Completed"
-                              >
-                                <Check className="w-3.5 h-3.5" /> Completed
-                              </button>
-                              <button
-                                onClick={() => updateAppointmentStatus(appointment.id, 'no-show')}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-md shadow-red-100 active:scale-95"
-                                title="No Show"
-                              >
-                                <X className="w-3.5 h-3.5" /> No Show
-                              </button>
-                            </>
-                          ) : (
-                            <button className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95">
-                              <Upload className="w-3.5 h-3.5" /> Upload Reports
-                            </button>
-                          )}
-                        </div>
-                      </td>
                     </tr>
                   );
                 })}
@@ -365,7 +365,7 @@ export const DashboardHome = () => {
                   {pendingAction.status === 'confirmed' ? 'Confirm Appointment' : 'Reject Appointment'}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {pendingAction.isMandatory ? 'Remarks are mandatory before confirming this appointment.' : 'Add remarks if you want to share a reason for rejection.'}
+                  {pendingAction.status === 'confirmed' ? 'Add remarks if needed (optional)' : 'Remarks are mandatory before rejecting'}
                 </p>
               </div>
 
@@ -380,7 +380,7 @@ export const DashboardHome = () => {
                     if (remarksError) setRemarksError('');
                   }}
                   rows={4}
-                  placeholder={pendingAction.isMandatory ? 'Enter confirmation remarks' : 'Enter rejection remarks'}
+                  placeholder={pendingAction.status === 'confirmed' ? 'Add remarks if needed' : 'Enter rejection remarks'}
                   className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all resize-none ${
                     remarksError
                       ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'

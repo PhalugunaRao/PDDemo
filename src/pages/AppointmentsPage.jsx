@@ -81,7 +81,7 @@ export const AppointmentsPage = () => {
     const trimmedRemarks = remarks.trim();
 
     if (pendingAction?.isMandatory && !trimmedRemarks) {
-      setRemarksError('Remarks are required to confirm this appointment.');
+      setRemarksError('Remarks are mandatory before rejecting.');
       return;
     }
 
@@ -206,6 +206,7 @@ export const AppointmentsPage = () => {
             <thead className="bg-gray-50/80 border-b border-gray-100">
               <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 <th className="px-6 py-5">Date & Time</th>
+                <th className="px-6 py-5 text-center">Action</th>
                 <th className="px-6 py-5">Appointment ID</th>
                 <th className="px-6 py-5">Branch</th>
                 <th className="px-6 py-5">Dr. Name</th>
@@ -217,7 +218,6 @@ export const AppointmentsPage = () => {
                 <th className="px-6 py-5">Package Name</th>
                 <th className="px-6 py-5">Collection Address</th>
                 {isPartialTab && <th className="px-6 py-5">Pending Reports</th>}
-                <th className="px-6 py-5 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -227,6 +227,51 @@ export const AppointmentsPage = () => {
                     <div className="flex flex-col">
                       <span className="font-bold text-gray-900">{format(parseISO(apt.date), 'dd MMM yyyy')}</span>
                       <span className="text-gray-400 text-[10px] mt-1">{format(parseISO(apt.date), 'hh:mm a')}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex items-center justify-center gap-2">
+                      {isConfirmationPendingTab ? (
+                        <>
+                          <button 
+                            onClick={() => openRemarksDialog(apt.id, 'confirmed', false)}
+                            className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 shadow-sm shadow-green-100 transition-all active:scale-90"
+                            title="Confirm"
+                          >
+                             <Check className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => openRemarksDialog(apt.id, 'rejected', true)}
+                            className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 shadow-sm shadow-red-100 transition-all active:scale-90"
+                            title="Reject"
+                          >
+                             <X className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : isConfirmedTab ? (
+                        <>
+                          <button
+                            onClick={() => updateAppointmentStatus(apt.id, 'completed')}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95"
+                            title="Completed"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Completed
+                          </button>
+                          <button
+                            onClick={() => updateAppointmentStatus(apt.id, 'no-show')}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-md shadow-red-100 active:scale-95"
+                            title="No Show"
+                          >
+                            <X className="w-3.5 h-3.5" /> No Show
+                          </button>
+                        </>
+                      ) : (
+                        <button 
+                          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
+                        >
+                          <Upload className="w-3.5 h-3.5" /> Upload Reports
+                        </button>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-5 font-black text-blue-600 uppercase tracking-tighter">
@@ -304,51 +349,6 @@ export const AppointmentsPage = () => {
                       </div>
                     </td>
                   )}
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-center gap-2">
-                      {isConfirmationPendingTab ? (
-                        <>
-                          <button 
-                            onClick={() => openRemarksDialog(apt.id, 'confirmed', true)}
-                            className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 shadow-sm shadow-green-100 transition-all active:scale-90"
-                            title="Confirm"
-                          >
-                             <Check className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => openRemarksDialog(apt.id, 'rejected', false)}
-                            className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 shadow-sm shadow-red-100 transition-all active:scale-90"
-                            title="Reject"
-                          >
-                             <X className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : isConfirmedTab ? (
-                        <>
-                          <button
-                            onClick={() => updateAppointmentStatus(apt.id, 'completed')}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95"
-                            title="Completed"
-                          >
-                            <Check className="w-3.5 h-3.5" /> Completed
-                          </button>
-                          <button
-                            onClick={() => updateAppointmentStatus(apt.id, 'no-show')}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-md shadow-red-100 active:scale-95"
-                            title="No Show"
-                          >
-                            <X className="w-3.5 h-3.5" /> No Show
-                          </button>
-                        </>
-                      ) : (
-                        <button 
-                          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
-                        >
-                          <Upload className="w-3.5 h-3.5" /> Upload Reports
-                        </button>
-                      )}
-                    </div>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -381,7 +381,7 @@ export const AppointmentsPage = () => {
                   {pendingAction.status === 'confirmed' ? 'Confirm Appointment' : 'Reject Appointment'}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {pendingAction.isMandatory ? 'Remarks are mandatory before confirming this appointment.' : 'Add remarks if you want to share a reason for rejection.'}
+                  {pendingAction.status === 'confirmed' ? 'Add remarks if needed (optional)' : 'Remarks are mandatory before rejecting'}
                 </p>
               </div>
 
@@ -396,7 +396,7 @@ export const AppointmentsPage = () => {
                     if (remarksError) setRemarksError('');
                   }}
                   rows={4}
-                  placeholder={pendingAction.isMandatory ? 'Enter confirmation remarks' : 'Enter rejection remarks'}
+                  placeholder={pendingAction.status === 'confirmed' ? 'Add remarks if needed' : 'Enter rejection remarks'}
                   className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all resize-none ${
                     remarksError
                       ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
