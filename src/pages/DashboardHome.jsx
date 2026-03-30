@@ -13,7 +13,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { format, parse, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const KPICard = ({ title, value, icon: Icon, colorClass, iconColor, onClick }) => (
   <Card
@@ -33,45 +33,21 @@ const KPICard = ({ title, value, icon: Icon, colorClass, iconColor, onClick }) =
 );
 
 export const DashboardHome = () => {
-  const { updateAppointmentStatus } = useAppContext();
+  const { appointments, updateAppointmentStatus } = useAppContext();
   const [activeFilter, setActiveFilter] = useState('today');
   const [pendingAction, setPendingAction] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [remarksError, setRemarksError] = useState('');
   const todayKey = new Date().toISOString().split('T')[0];
+  const realAppointmentIds = useMemo(
+    () => new Set(RAW_APPOINTMENTS.map((raw) => raw.appointment_id || `RAW-${raw.id}`)),
+    []
+  );
 
   const realAppointments = useMemo(() => {
-    return RAW_APPOINTMENTS.map((raw) => {
-      let isoDate = new Date().toISOString();
-      try {
-        if (raw.appointment_date && raw.appointment_time) {
-          const dateStr = `${raw.appointment_date} ${raw.appointment_time}`;
-          isoDate = parse(dateStr, 'yyyy-MM-dd hh:mm a', new Date()).toISOString();
-        }
-      } catch {
-        console.warn('Failed to parse dashboard date for', raw.appointment_id);
-      }
-
-      const ageGender = raw.age_and_gender?.split(',') || ['NA', 'NA'];
-
-      return {
-        id: raw.appointment_id || `RAW-${raw.id}`,
-        customerName: raw.name,
-        phone: raw.mobile_number,
-        date: isoDate,
-        package: raw.package_name?.[0] || 'Standard Package',
-        status: (raw.vendor_status || 'NEW').trim().toLowerCase().replace(/\s+/g, '_'),
-        vendor_status: (raw.vendor_status || 'NEW').trim().toUpperCase(),
-        branch: raw.branch || 'Madhapur, Hyderabad',
-        age: ageGender[0]?.trim(),
-        gender: ageGender[1]?.trim(),
-        home_collection: !!raw.home_collection,
-        address: raw.home_address,
-        timeSinceCreate: raw.time_since_create,
-      };
-    });
-  }, []);
+    return appointments.filter((appointment) => realAppointmentIds.has(appointment.id));
+  }, [appointments, realAppointmentIds]);
 
   const openRemarksDialog = (appointmentId, status, isMandatory) => {
     setPendingAction({ appointmentId, status, isMandatory });
@@ -106,9 +82,19 @@ export const DashboardHome = () => {
     return 'red';
   };
 
+  const isReportPendingAppointment = (appointment) => {
+    const normalizedVendorStatus = (appointment.vendor_status || '').trim().toUpperCase();
+    return normalizedVendorStatus === 'COMPLETED' || normalizedVendorStatus === 'PARTIALLY RECEIVED';
+  };
+
   const dashboardStats = useMemo(() => {
     const todaysAppointments = realAppointments.filter((appointment) => appointment.date.startsWith(todayKey));
-    const slaCandidates = todaysAppointments;
+    const todaysConfirmedAppointments = todaysAppointments.filter(
+      (appointment) => (appointment.vendor_status || '').trim().toUpperCase() === 'CONFIRMED'
+    );
+    const slaCandidates = todaysAppointments.filter(
+      (appointment) => (appointment.vendor_status || '').trim().toUpperCase() === 'NEW'
+    );
 
     const slaBuckets = slaCandidates.reduce(
       (accumulator, appointment) => {
@@ -129,9 +115,8 @@ export const DashboardHome = () => {
     );
 
     return {
-      appointmentsToday: todaysAppointments.length,
-      reportsPending: realAppointments.filter((appointment) => appointment.status === 'completed').length,
-      slaBreaches: slaBuckets.red,
+      appointmentsToday: todaysConfirmedAppointments.length,
+      slaBreaches: slaBuckets.red + realAppointments.filter(isReportPendingAppointment).length,
       amber: slaBuckets.amber,
       green: slaBuckets.green,
     };
@@ -139,27 +124,32 @@ export const DashboardHome = () => {
 
   const filteredAppointments = useMemo(() => {
     const todaysAppointments = realAppointments.filter((appointment) => appointment.date.startsWith(todayKey));
+    const todaysConfirmedAppointments = todaysAppointments.filter(
+      (appointment) => (appointment.vendor_status || '').trim().toUpperCase() === 'CONFIRMED'
+    );
+    const todaysPendingAppointments = todaysAppointments.filter(
+      (appointment) => (appointment.vendor_status || '').trim().toUpperCase() === 'NEW'
+    );
 
-    if (activeFilter === 'reports') {
-      return realAppointments.filter((appointment) => appointment.status === 'completed');
-    }
     if (activeFilter === 'red') {
-      return todaysAppointments.filter((appointment) => getSlaBucket(appointment) === 'red');
+      return [
+        ...todaysPendingAppointments.filter((appointment) => getSlaBucket(appointment) === 'red'),
+        ...realAppointments.filter(isReportPendingAppointment),
+      ];
     }
     if (activeFilter === 'amber') {
-      return todaysAppointments.filter((appointment) => getSlaBucket(appointment) === 'amber');
+      return todaysPendingAppointments.filter((appointment) => getSlaBucket(appointment) === 'amber');
     }
     if (activeFilter === 'green') {
-      return todaysAppointments.filter((appointment) => getSlaBucket(appointment) === 'green');
+      return todaysPendingAppointments.filter((appointment) => getSlaBucket(appointment) === 'green');
     }
 
-    return todaysAppointments;
+    return todaysConfirmedAppointments;
   }, [realAppointments, activeFilter, todayKey]);
 
   const filterHeadingMap = {
     today: "Today's Appointments",
-    reports: 'Reports Pending',
-    red: 'Breached SLA Appointments',
+    red: 'SLA Breaches',
     amber: 'Approaching SLA Appointments',
     green: 'Within SLA Appointments',
   };
@@ -167,7 +157,7 @@ export const DashboardHome = () => {
   return (
     <div className="space-y-8 pb-10">
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <KPICard 
           title="Appointments Today" 
           value={dashboardStats.appointmentsToday} 
@@ -175,14 +165,6 @@ export const DashboardHome = () => {
           colorClass="bg-blue-50" 
           iconColor="text-blue-600" 
           onClick={() => setActiveFilter('today')}
-        />
-        <KPICard 
-          title="Reports Pending" 
-          value={dashboardStats.reportsPending} 
-          icon={Upload} 
-          colorClass="bg-amber-50" 
-          iconColor="text-amber-500" 
-          onClick={() => setActiveFilter('reports')}
         />
         <KPICard 
           title="SLA Breaches" 
@@ -289,6 +271,13 @@ export const DashboardHome = () => {
                                 <X className="w-3.5 h-3.5" /> No Show
                               </button>
                             </>
+                          ) : appointment.status === 'completed' || appointment.status === 'partially_received' ? (
+                            <button
+                              onClick={() => setSelectedAppointment(appointment)}
+                              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
+                            >
+                              <Upload className="w-3.5 h-3.5" /> Upload Reports
+                            </button>
                           ) : (
                             <button
                               onClick={() => setSelectedAppointment(appointment)}
@@ -313,7 +302,7 @@ export const DashboardHome = () => {
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-2">
                           <Badge status={appointment.status} className="px-3 py-1 text-[9px] font-black uppercase tracking-widest w-fit" />
-                          {activeFilter !== 'reports' && (
+                          {activeFilter !== 'today' && !isReportPendingAppointment(appointment) && (
                             <span
                               className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border w-fit ${
                                 slaBucket === 'green'
