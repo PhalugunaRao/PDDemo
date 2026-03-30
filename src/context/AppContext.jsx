@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { parse } from 'date-fns';
 
 const AppContext = createContext();
-const APPOINTMENTS_STORAGE_KEY = 'appointments_v6';
+const APPOINTMENTS_STORAGE_KEY = 'appointments_v7';
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -26,6 +26,71 @@ export const AppProvider = ({ children }) => {
     return statusMap[normalizedStatus] || normalizedStatus.toUpperCase();
   };
 
+  const flattenTests = (tests = {}) =>
+    Object.values(tests).flatMap(categoryTests => categoryTests || []);
+
+  const getPendingComponents = (tests = {}) =>
+    flattenTests(tests)
+      .filter(test => !test.result_received)
+      .map(test => test.test_component || test.test_name);
+
+  const getUploadedComponents = (tests = {}) =>
+    flattenTests(tests)
+      .filter(test => test.result_received)
+      .map(test => test.test_component || test.test_name);
+
+  const inferDobFromAge = (age, isoDate) => {
+    const numericAge = Number.parseInt(age, 10);
+    if (Number.isNaN(numericAge) || !isoDate) return '';
+
+    const referenceDate = new Date(isoDate);
+    referenceDate.setFullYear(referenceDate.getFullYear() - numericAge);
+    return referenceDate.toISOString().split('T')[0];
+  };
+
+  const extractReportProfile = (fileName = '') => {
+    const normalizedName = fileName.toLowerCase();
+    const genderMatch = normalizedName.match(/\b(male|female|m|f)\b/);
+    const dobMatch =
+      normalizedName.match(/\b(19|20)\d{2}[-_](0[1-9]|1[0-2])[-_](0[1-9]|[12]\d|3[01])\b/) ||
+      normalizedName.match(/\b(0[1-9]|[12]\d|3[01])[-_](0[1-9]|1[0-2])[-_](19|20)\d{2}\b/);
+
+    const detectedGender = genderMatch?.[0];
+    const detectedDob = dobMatch?.[0];
+
+    return {
+      gender: detectedGender
+        ? detectedGender === 'm'
+          ? 'Male'
+          : detectedGender === 'f'
+            ? 'Female'
+            : `${detectedGender.charAt(0).toUpperCase()}${detectedGender.slice(1)}`
+        : '',
+      dob: detectedDob
+        ? /^\d{4}[-_]\d{2}[-_]\d{2}$/.test(detectedDob)
+          ? detectedDob.replaceAll('_', '-')
+          : (() => {
+              const [day, month, year] = detectedDob.replaceAll('_', '-').split('-');
+              return `${year}-${month}-${day}`;
+            })()
+        : '',
+    };
+  };
+
+  const buildValidationFlags = (appointment, reportProfile) => {
+    const flags = [];
+
+    if (reportProfile.gender && appointment.gender && reportProfile.gender !== appointment.gender) {
+      flags.push(`Gender mismatch: report shows ${reportProfile.gender}, profile shows ${appointment.gender}.`);
+    }
+
+    if (reportProfile.dob && appointment.dob && reportProfile.dob !== appointment.dob) {
+      flags.push(`DOB mismatch: report shows ${reportProfile.dob}, profile shows ${appointment.dob}.`);
+    }
+
+    return flags;
+  };
+
   const normalizeAppointment = (appointment) => {
     const normalizedVendorStatus = appointment.vendor_status
       ? normalizeVendorStatus(appointment.vendor_status)
@@ -35,6 +100,10 @@ export const AppProvider = ({ children }) => {
       ...appointment,
       status: mapVendorStatusToStatus(normalizedVendorStatus),
       vendor_status: normalizedVendorStatus,
+      reports: appointment.reports || [],
+      validationFlags: appointment.validationFlags || [],
+      pendingComponents: appointment.pendingComponents || getPendingComponents(appointment.tests),
+      uploadedComponents: appointment.uploadedComponents || getUploadedComponents(appointment.tests),
     };
   };
   
@@ -68,6 +137,7 @@ export const AppProvider = ({ children }) => {
       isSlaBreached: raw.time_since_create_color === 'red',
       age: ageGender[0]?.trim(),
       gender: ageGender[1]?.trim(),
+      dob: inferDobFromAge(ageGender[0]?.trim(), isoDate),
       home_collection: !!raw.home_collection,
       address: raw.home_address,
       tests: raw.appointment_tests,
@@ -123,14 +193,21 @@ export const AppProvider = ({ children }) => {
   const updateAppointmentStatus = (id, newStatus, reason = '') => {
     setAppointments(prev => prev.map(apt => {
       if (apt.id === id) {
+        const trimmedReason = reason.trim();
+
         return {
           ...apt,
           status: newStatus,
           vendor_status: mapStatusToVendorStatus(newStatus),
-          rejectReason: reason,
+          actionRemarks: trimmedReason,
+          rejectReason: newStatus === 'rejected' ? trimmedReason : apt.rejectReason,
           auditLog: [
             ...apt.auditLog,
-            { action: `Status changed to ${newStatus}`, timestamp: new Date().toISOString(), user: user?.name || 'Staff' }
+            {
+              action: trimmedReason ? `Status changed to ${newStatus} (${trimmedReason})` : `Status changed to ${newStatus}`,
+              timestamp: new Date().toISOString(),
+              user: user?.name || 'Staff'
+            }
           ]
         };
       }
@@ -139,14 +216,47 @@ export const AppProvider = ({ children }) => {
     toast.success(`APT ${id} updated to ${newStatus}`);
   };
 
-  const uploadReport = (id, file) => {
+  const uploadReport = (id, file, componentName = '') => {
     setAppointments(prev => prev.map(apt => {
       if (apt.id === id) {
+        const updatedTests = Object.fromEntries(
+          Object.entries(apt.tests || {}).map(([category, tests]) => [
+            category,
+            (tests || []).map(test => {
+              const label = test.test_component || test.test_name;
+              return label === componentName ? { ...test, result_received: true } : test;
+            }),
+          ])
+        );
+        const pendingComponents = getPendingComponents(updatedTests);
+        const uploadedComponents = getUploadedComponents(updatedTests);
+        const extractedProfile = extractReportProfile(file.name);
+        const validationFlags = buildValidationFlags(apt, extractedProfile);
+        const nextStatus = pendingComponents.length > 0 ? 'partially_received' : 'report_uploaded';
+
         return {
           ...apt,
-          status: 'report_uploaded',
-          reports: [...(apt.reports || []), { name: file.name, date: new Date().toISOString() }],
-          auditLog: [...apt.auditLog, { action: 'Report Uploaded', timestamp: new Date().toISOString(), user: 'Operator' }]
+          status: nextStatus,
+          vendor_status: mapStatusToVendorStatus(nextStatus),
+          tests: updatedTests,
+          reports: [
+            ...(apt.reports || []),
+            {
+              name: file.name,
+              date: new Date().toISOString(),
+              componentName,
+              extractedProfile,
+              validationFlags,
+            }
+          ],
+          pendingComponents,
+          uploadedComponents,
+          validationFlags,
+          auditLog: [
+            ...(apt.auditLog || []),
+            { action: `Report Uploaded${componentName ? ` for ${componentName}` : ''}`, timestamp: new Date().toISOString(), user: 'Operator' },
+            ...validationFlags.map(flag => ({ action: `Red Flag: ${flag}`, timestamp: new Date().toISOString(), user: 'AI Validator' }))
+          ]
         };
       }
       return apt;

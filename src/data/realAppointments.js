@@ -1456,5 +1456,380 @@ export const RAW_APPOINTMENTS = [
         "benefit_type": "ahc",
         "customer_id": "EKI255935018",
         "doctor_name": ""
+    },
+    {
+        "registration_date": "2025-09-22",
+        "time": "03:00 PM",
+        "name": "Trust",
+        "appointmentee_id": 4764240,
+        "id": 1788052,
+        "appointment_date": "2025-11-22",
+        "appointment_id": "APT2ZPGUDW98",
+        "provider_id": 42474,
+        "appointment_time": "03:00 pm",
+        "package_id": null,
+        "package_ids": [
+            29080
+        ],
+        "package_name": [
+            "DUMMY_CBC"
+        ],
+        "list_of_reports_to_be_received": [
+            "pathology"
+        ],
+        "missing_reports": false,
+        "list_of_missing_reports": [
+            "pathology"
+        ],
+        "vendor_status": "Partially Received",
+        "branch": "Marathahalli_Bengaluru, Bangalore",
+        "age_and_gender": "30, Female",
+        "home_collection": false,
+        "mobile_number": "+91-9739209872",
+        "home_address": "25, Electronic City, Bengaluru, Karnataka, India, Bangalore, 560100",
+        "id_details": null,
+        "cowin_registration": null,
+        "time_since_create": 3190,
+        "time_since_create_color": "red",
+        "appointment_tests": {
+            "APTT": [
+                {
+                    "id": 49586862,
+                    "appointment_id": 1788052,
+                    "test_name": "APTT",
+                    "result_received": false,
+                    "created_at": "2025-11-17T07:13:44.705Z",
+                    "updated_at": "2025-11-17T07:13:44.705Z",
+                    "verified_by_staff_id": null,
+                    "test_component": "APTT ",
+                    "lonic_code": "3173-2",
+                    "category": null
+                }
+            ],
+            "Blood Based Genetic": [
+                {
+                    "id": 49586876,
+                    "appointment_id": 1788052,
+                    "test_name": "Blood Based Genetic",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.766Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Blood analysis and report",
+                    "lonic_code": "58410-2",
+                    "category": null
+                },
+                {
+                    "id": 49586877,
+                    "appointment_id": 1788052,
+                    "test_name": "Blood Based Genetic",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.769Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Home Collection of blood sample",
+                    "lonic_code": "66746-9",
+                    "category": null
+                }
+            ],
+            "Blood Glucose": [
+                {
+                    "id": 49586878,
+                    "appointment_id": 1788052,
+                    "test_name": "Blood Glucose",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.773Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "HbA1c",
+                    "lonic_code": "4548-4",
+                    "category": null
+                },
+                {
+                    "id": 49586883,
+                    "appointment_id": 1788052,
+                    "test_name": "Blood Glucose",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.789Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Postprandial Blood Sugar",
+                    "lonic_code": "1521-4",
+                    "category": null
+                },
+                {
+                    "id": 49586869,
+                    "appointment_id": 1788052,
+                    "test_name": "Blood Glucose",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.743Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Fasting Blood Sugar",
+                    "lonic_code": "1558-6",
+                    "category": null
+                }
+            ],
+            "Cholera": [
+                {
+                    "id": 49586886,
+                    "appointment_id": 1788052,
+                    "test_name": "Cholera",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.798Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Typhoid ",
+                    "lonic_code": "EKIN987",
+                    "category": null
+                },
+                {
+                    "id": 49586868,
+                    "appointment_id": 1788052,
+                    "test_name": "Cholera",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.737Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Hepatitis A",
+                    "lonic_code": "LG32762-3",
+                    "category": null
+                },
+                {
+                    "id": 49586882,
+                    "appointment_id": 1788052,
+                    "test_name": "Cholera",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.785Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Tetanus vaccine",
+                    "lonic_code": "90714",
+                    "category": null
+                },
+                {
+                    "id": 49586875,
+                    "appointment_id": 1788052,
+                    "test_name": "Cholera",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.763Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Flu Vaccination",
+                    "lonic_code": "EKFLU",
+                    "category": null
+                }
+            ],
+            "Complete urine exam": [
+                {
+                    "id": 49586872,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.754Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Reaction.pH",
+                    "lonic_code": "5803-2",
+                    "category": null
+                },
+                {
+                    "id": 49586873,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.757Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Bile Pigments",
+                    "lonic_code": "EKC-CUE-BP-08",
+                    "category": null
+                },
+                {
+                    "id": 49586874,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.760Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Bile Salts",
+                    "lonic_code": "EKC-CUE-BP-22",
+                    "category": null
+                },
+                {
+                    "id": 49586879,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.776Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Blood",
+                    "lonic_code": "5794-3",
+                    "category": null
+                },
+                {
+                    "id": 49586880,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.779Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Sugar (Glucose)",
+                    "lonic_code": "25428-4",
+                    "category": null
+                },
+                {
+                    "id": 49586881,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.782Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Specific Gravity",
+                    "lonic_code": "5811-5",
+                    "category": null
+                },
+                {
+                    "id": 49586884,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.792Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Albumin",
+                    "lonic_code": "1754-1",
+                    "category": null
+                },
+                {
+                    "id": 49586885,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.795Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Nitrates",
+                    "lonic_code": "5802-4-N",
+                    "category": null
+                },
+                {
+                    "id": 49586860,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.695Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Appearance",
+                    "lonic_code": "5767-9",
+                    "category": null
+                },
+                {
+                    "id": 49586861,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.700Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Colour",
+                    "lonic_code": "5778-6",
+                    "category": null
+                },
+                {
+                    "id": 49586863,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.713Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Bacteria",
+                    "lonic_code": "630-4",
+                    "category": null
+                },
+                {
+                    "id": 49586864,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.718Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Pus Cells",
+                    "lonic_code": "5821-4",
+                    "category": null
+                },
+                {
+                    "id": 49586865,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.721Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Protein",
+                    "lonic_code": "20454-5",
+                    "category": null
+                },
+                {
+                    "id": 49586866,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.724Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Crystals",
+                    "lonic_code": "38459-4",
+                    "category": null
+                },
+                {
+                    "id": 49586867,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.728Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Epithelial cells",
+                    "lonic_code": "11277-1",
+                    "category": null
+                },
+                {
+                    "id": 49586870,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.747Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Urobilinogen",
+                    "lonic_code": "EKC-CUE-U-10",
+                    "category": null
+                },
+                {
+                    "id": 49586871,
+                    "appointment_id": 1788052,
+                    "test_name": "Complete urine exam",
+                    "result_received": true,
+                    "created_at": "2025-11-17T07:13:44.751Z",
+                    "updated_at": "2025-12-23T11:19:51.293Z",
+                    "verified_by_staff_id": 4455,
+                    "test_component": "Casts",
+                    "lonic_code": "9842-6",
+                    "category": null
+                }
+            ]
+        },
+        "national_identity_number": null,
+        "benefit_type": "ahc",
+        "customer_id": "EKI692972999",
+        "doctor_name": ""
     }
 ];

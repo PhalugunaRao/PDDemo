@@ -11,7 +11,8 @@ import {
   X,
   FileText,
   ClipboardList,
-  AlertCircle
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { Card } from '../components/ui/Card';
@@ -36,8 +37,41 @@ export const AppointmentsPage = () => {
   const { appointments, updateAppointmentStatus } = useAppContext();
   const [activeTab, setActiveTab] = useState('Pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const [openPendingInfo, setOpenPendingInfo] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [remarks, setRemarks] = useState('');
+  const [remarksError, setRemarksError] = useState('');
   const isConfirmationPendingTab = activeTab === 'Pending';
   const isConfirmedTab = activeTab === 'Confirmed';
+  const isPartialTab = activeTab === 'Partial';
+
+  const openRemarksDialog = (appointmentId, status, isMandatory) => {
+    setPendingAction({ appointmentId, status, isMandatory });
+    setRemarks('');
+    setRemarksError('');
+  };
+
+  const closeRemarksDialog = () => {
+    setPendingAction(null);
+    setRemarks('');
+    setRemarksError('');
+  };
+
+  const closePendingInfoDialog = () => {
+    setOpenPendingInfo(null);
+  };
+
+  const submitPendingAction = () => {
+    const trimmedRemarks = remarks.trim();
+
+    if (pendingAction?.isMandatory && !trimmedRemarks) {
+      setRemarksError('Remarks are required to confirm this appointment.');
+      return;
+    }
+
+    updateAppointmentStatus(pendingAction.appointmentId, pendingAction.status, trimmedRemarks);
+    closeRemarksDialog();
+  };
 
   const tabs = [
     { id: 'Pending', label: 'Confirmation Pending', icon: AlertCircle },
@@ -137,6 +171,7 @@ export const AppointmentsPage = () => {
                 <th className="px-6 py-5">Customer Details</th>
                 <th className="px-6 py-5">Package Name</th>
                 <th className="px-6 py-5">Collection Address</th>
+                {isPartialTab && <th className="px-6 py-5">Pending Reports</th>}
                 <th className="px-6 py-5 text-center">Action</th>
               </tr>
             </thead>
@@ -168,6 +203,12 @@ export const AppointmentsPage = () => {
                   </td>
                   <td className="px-6 py-5">
                     <Badge status={apt.status} className="px-3 py-1 text-[9px] font-black uppercase tracking-widest" />
+                    {isPartialTab && apt.validationFlags?.length > 0 && (
+                      <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-red-700">Red Flag Warning</p>
+                        <p className="mt-1 text-[10px] font-bold text-red-700">{apt.validationFlags[0]}</p>
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-5 text-gray-400">
                     --
@@ -191,19 +232,46 @@ export const AppointmentsPage = () => {
                   <td className="px-6 py-5 text-gray-300">
                     -------------------
                   </td>
+                  {isPartialTab && (
+                    <td className="px-6 py-5">
+                      <div className="relative inline-flex items-center gap-2 max-w-[260px]">
+                        {apt.pendingComponents?.length > 0 ? (
+                          <>
+                            <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-red-50 text-red-700 border-red-200 truncate max-w-[180px]">
+                              {apt.pendingComponents[0]}
+                            </span>
+                            <button
+                              type="button"
+                              className="text-gray-400 hover:text-blue-600 transition-colors"
+                              aria-label={`View all pending reports for ${apt.id}`}
+                              aria-expanded={openPendingInfo?.id === apt.id}
+                              onMouseEnter={() => setOpenPendingInfo({ id: apt.id, reports: apt.pendingComponents })}
+                              onClick={() => setOpenPendingInfo({ id: apt.id, reports: apt.pendingComponents })}
+                            >
+                              <Info className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-green-50 text-green-700 border-green-200">
+                            No Pending Reports
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  )}
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-2">
                       {isConfirmationPendingTab ? (
                         <>
                           <button 
-                            onClick={() => updateAppointmentStatus(apt.id, 'confirmed')}
+                            onClick={() => openRemarksDialog(apt.id, 'confirmed', true)}
                             className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 shadow-sm shadow-green-100 transition-all active:scale-90"
                             title="Confirm"
                           >
                              <Check className="w-4 h-4" />
                           </button>
                           <button 
-                            onClick={() => updateAppointmentStatus(apt.id, 'rejected')}
+                            onClick={() => openRemarksDialog(apt.id, 'rejected', false)}
                             className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 shadow-sm shadow-red-100 transition-all active:scale-90"
                             title="Reject"
                           >
@@ -258,6 +326,103 @@ export const AppointmentsPage = () => {
            </div>
         </div>
       </Card>
+
+      {pendingAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm px-4">
+          <Card className="w-full max-w-lg p-6 bg-white rounded-2xl shadow-2xl border border-gray-100">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 uppercase tracking-wide">
+                  {pendingAction.status === 'confirmed' ? 'Confirm Appointment' : 'Reject Appointment'}
+                </h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {pendingAction.isMandatory ? 'Remarks are mandatory before confirming this appointment.' : 'Add remarks if you want to share a reason for rejection.'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black uppercase tracking-widest text-gray-500">
+                  Remarks {pendingAction.isMandatory ? '*' : '(Optional)'}
+                </label>
+                <textarea
+                  value={remarks}
+                  onChange={(e) => {
+                    setRemarks(e.target.value);
+                    if (remarksError) setRemarksError('');
+                  }}
+                  rows={4}
+                  placeholder={pendingAction.isMandatory ? 'Enter confirmation remarks' : 'Enter rejection remarks'}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all resize-none ${
+                    remarksError
+                      ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
+                  }`}
+                />
+                {remarksError && (
+                  <p className="text-xs font-bold text-red-600">{remarksError}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={closeRemarksDialog}
+                  className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitPendingAction}
+                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all ${
+                    pendingAction.status === 'confirmed'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {pendingAction.status === 'confirmed' ? 'Confirm' : 'Reject'}
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {openPendingInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm px-4"
+          onClick={closePendingInfoDialog}
+        >
+          <Card
+            className="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl border border-gray-100"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 uppercase tracking-wide">Pending Reports</h2>
+                <p className="mt-1 text-sm text-gray-500">All pending components for appointment `{openPendingInfo.id}`.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closePendingInfoDialog}
+                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+                aria-label="Close pending reports popup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {openPendingInfo.reports.map((component) => (
+                <span
+                  key={`${openPendingInfo.id}-${component}`}
+                  className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-red-50 text-red-700 border-red-200"
+                >
+                  {component}
+                </span>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

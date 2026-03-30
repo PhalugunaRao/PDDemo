@@ -28,18 +28,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../context/AppContext';
 
 export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
-  const { updateAppointmentStatus } = useAppContext();
+  const { appointments, updateAppointmentStatus, uploadReport } = useAppContext();
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  const [selectedComponent, setSelectedComponent] = useState('');
 
   if (!appointment) return null;
 
-  const handleUpload = () => {
+  const currentAppointment = appointments.find((item) => item.id === appointment.id) || appointment;
+  const pendingComponents = currentAppointment.pendingComponents || [];
+  const uploadedComponents = currentAppointment.uploadedComponents || [];
+
+  const handleUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedComponent) return;
+
     setUploading(true);
     setTimeout(() => {
-      updateAppointmentStatus(appointment.id, 'verification_required');
+      uploadReport(currentAppointment.id, file, selectedComponent);
+      setSelectedComponent('');
       setUploading(false);
-      onClose();
     }, 2000);
   };
 
@@ -73,14 +81,14 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-5">
                   <div className="w-16 h-16 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-2xl font-black shadow-2xl shadow-brand-200 rotate-3 transition-transform hover:rotate-0">
-                    {appointment.customerName.charAt(0)}
+                    {currentAppointment.customerName.charAt(0)}
                   </div>
                   <div>
                     <h2 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3 uppercase">
-                      {appointment.customerName}
-                      <Badge status={appointment.status} className="text-sm px-4 py-1.5 font-black uppercase tracking-widest shadow-sm" />
+                      {currentAppointment.customerName}
+                      <Badge status={currentAppointment.status} className="text-sm px-4 py-1.5 font-black uppercase tracking-widest shadow-sm" />
                     </h2>
-                    <p className="text-gray-400 font-bold mt-1 text-sm tracking-widest uppercase">{appointment.id} • {appointment.branch}</p>
+                    <p className="text-gray-400 font-bold mt-1 text-sm tracking-widest uppercase">{currentAppointment.id} • {currentAppointment.branch}</p>
                   </div>
                 </div>
                 <button 
@@ -93,11 +101,11 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
 
               {/* Quick Actions */}
               <div className="flex gap-3 mt-10">
-                {appointment.status === 'new' && (
+                {currentAppointment.status === 'new' && (
                   <>
                     <Button 
                       variant="primary" 
-                      onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
+                      onClick={() => updateAppointmentStatus(currentAppointment.id, 'confirmed')}
                       className="flex-1 py-4 text-sm font-black uppercase tracking-widest rounded-2xl shadow-brand-100 shadow-xl"
                       icon={Check}
                     >
@@ -105,7 +113,7 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                     </Button>
                     <Button 
                       variant="danger" 
-                      onClick={() => updateAppointmentStatus(appointment.id, 'no-show')}
+                      onClick={() => updateAppointmentStatus(currentAppointment.id, 'no-show')}
                       className="flex-1 py-4 text-sm font-black uppercase tracking-widest rounded-2xl"
                       icon={X}
                     >
@@ -113,10 +121,10 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                     </Button>
                   </>
                 )}
-                {appointment.status === 'confirmed' && (
+                {currentAppointment.status === 'confirmed' && (
                   <Button 
                     variant="primary" 
-                    onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
+                    onClick={() => updateAppointmentStatus(currentAppointment.id, 'completed')}
                     className="flex-1 py-4 text-sm font-black uppercase tracking-widest rounded-2xl shadow-brand-100 shadow-xl"
                     icon={ShieldCheck}
                   >
@@ -167,7 +175,7 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                           <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
                             <Phone className="w-5 h-5" />
                           </div>
-                          <span className="font-bold text-gray-900 text-lg">{appointment.phone}</span>
+                          <span className="font-bold text-gray-900 text-lg">{currentAppointment.phone}</span>
                         </div>
                       </div>
                       <div className="space-y-2 group">
@@ -176,7 +184,7 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                           <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
                             <Mail className="w-5 h-5" />
                           </div>
-                          <span className="font-bold text-gray-900 text-lg truncate flex-1">{appointment.email}</span>
+                          <span className="font-bold text-gray-900 text-lg truncate flex-1">{currentAppointment.email}</span>
                         </div>
                       </div>
                     </div>
@@ -187,21 +195,21 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                           <Calendar className="w-4 h-4" />
                           <span className="text-[10px] font-black uppercase tracking-widest">Date</span>
                         </div>
-                        <p className="font-black text-gray-900 uppercase">{format(parseISO(appointment.date), 'MMM dd, yyyy')}</p>
+                        <p className="font-black text-gray-900 uppercase">{format(parseISO(currentAppointment.date), 'MMM dd, yyyy')}</p>
                       </div>
                       <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
                         <div className="flex items-center gap-2 text-gray-400 mb-2">
                           <Clock className="w-4 h-4" />
                           <span className="text-[10px] font-black uppercase tracking-widest">Time</span>
                         </div>
-                        <p className="font-black text-gray-900 uppercase">{format(parseISO(appointment.date), 'hh:mm a')}</p>
+                        <p className="font-black text-gray-900 uppercase">{format(parseISO(currentAppointment.date), 'hh:mm a')}</p>
                       </div>
                       <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
                         <div className="flex items-center gap-2 text-gray-400 mb-2">
                           <Activity className="w-4 h-4" />
                           <span className="text-[10px] font-black uppercase tracking-widest">Age/Gender</span>
                         </div>
-                        <p className="font-black text-gray-900 uppercase tracking-tighter">{appointment.age}Y • {appointment.gender}</p>
+                        <p className="font-black text-gray-900 uppercase tracking-tighter">{currentAppointment.age}Y • {currentAppointment.gender}</p>
                       </div>
                     </div>
 
@@ -215,19 +223,19 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                           <div className="flex-1">
                             <div className="flex justify-between items-start">
                               <div>
-                                <h5 className="text-xl font-black text-gray-900 uppercase tracking-tight">{appointment.package}</h5>
+                                <h5 className="text-xl font-black text-gray-900 uppercase tracking-tight">{currentAppointment.package}</h5>
                                 <div className="flex gap-2 mt-1">
                                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
-                                    <Tag className="w-3 h-3" /> {appointment.benefitType}
+                                    <Tag className="w-3 h-3" /> {currentAppointment.benefitType}
                                   </span>
                                 </div>
                               </div>
-                              <span className="text-2xl font-black text-brand-600">₹{Math.floor(appointment.price)}</span>
+                              <span className="text-2xl font-black text-brand-600">₹{Math.floor(currentAppointment.price)}</span>
                             </div>
                             <div className="flex items-center gap-2 mt-4">
                                <span className="px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-brand-100">PRE-PAID</span>
-                               <span className={`px-3 py-1 ${appointment.home_collection ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-gray-100 text-gray-600 border-gray-200'} rounded-full text-[10px] font-black uppercase tracking-widest border`}>
-                                 {appointment.home_collection ? 'HOME COLLECTION' : 'CENTER VISIT'}
+                               <span className={`px-3 py-1 ${currentAppointment.home_collection ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-gray-100 text-gray-600 border-gray-200'} rounded-full text-[10px] font-black uppercase tracking-widest border`}>
+                                 {currentAppointment.home_collection ? 'HOME COLLECTION' : 'CENTER VISIT'}
                                </span>
                             </div>
                           </div>
@@ -235,14 +243,14 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                       </Card>
                     </div>
 
-                    {appointment.address && appointment.address !== ', ' && (
+                    {currentAppointment.address && currentAppointment.address !== ', ' && (
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Collection Address</h4>
                         <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-4 hover:bg-white hover:border-brand-100 hover:shadow-lg transition-all">
                            <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
                               <MapPin className="w-5 h-5" />
                            </div>
-                           <p className="font-bold text-gray-700 text-sm leading-relaxed">{appointment.address}</p>
+                           <p className="font-bold text-gray-700 text-sm leading-relaxed">{currentAppointment.address}</p>
                         </div>
                       </div>
                     )}
@@ -261,8 +269,8 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                        <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-100 italic">Verified by Laboratory</span>
                     </div>
 
-                    {appointment.tests ? (
-                      Object.entries(appointment.tests).map(([category, tests]) => (
+                    {currentAppointment.tests ? (
+                      Object.entries(currentAppointment.tests).map(([category, tests]) => (
                         <div key={category} className="space-y-3">
                            <div className="flex items-center gap-3">
                               <div className="h-0.5 flex-1 bg-gray-50" />
@@ -304,9 +312,9 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                     exit={{ opacity: 0, x: -10 }}
                     className="space-y-12 pl-4"
                   >
-                    {appointment.auditLog?.map((log, idx) => (
+                    {currentAppointment.auditLog?.map((log, idx) => (
                       <div key={idx} className="relative pl-10 group">
-                        {idx !== (appointment.auditLog?.length || 0) - 1 && (
+                        {idx !== (currentAppointment.auditLog?.length || 0) - 1 && (
                           <div className="absolute left-4 top-8 bottom-[-32px] w-0.5 bg-gray-100 rounded-full" />
                         )}
                         <div className="absolute left-0 top-1 p-2 bg-white border-2 border-brand-600 rounded-xl shadow-lg shadow-brand-100 group-hover:scale-125 transition-transform duration-300 z-10">
@@ -336,40 +344,89 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                     className="space-y-10"
                   >
                     {/* File Upload Area */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Upload Diagnostics</h4>
-                      <div className="border-4 border-dashed border-gray-100 rounded-3xl p-12 text-center hover:border-brand-200 hover:bg-brand-50/20 transition-all group cursor-pointer relative overflow-hidden">
-                        <input 
-                          type="file" 
-                          className="absolute inset-0 opacity-0 cursor-pointer" 
-                          onChange={handleUpload}
-                          disabled={uploading}
-                        />
-                        <div className="flex flex-col items-center gap-6">
-                           <div className="w-24 h-24 bg-brand-50 text-brand-600 rounded-3xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-xl shadow-brand-100/50">
-                              <Upload className="w-10 h-10" />
-                           </div>
-                           <div>
-                              <p className="text-xl font-black text-gray-900 uppercase tracking-tight">Drag & Drop Results</p>
-                              <p className="text-sm text-gray-400 font-bold mt-2 uppercase tracking-widest">Supported: PDF, JPG, PNG (Max 10MB)</p>
-                           </div>
-                           <Button 
-                             loading={uploading}
-                             variant="secondary" 
-                             className="px-8 py-3 rounded-2xl border-gray-200 font-black uppercase tracking-widest text-xs"
-                           >
-                             Select Files from storage
-                           </Button>
+                    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.9fr)] gap-6 items-start">
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Upload Diagnostics</h4>
+                        <div className="border-4 border-dashed border-gray-100 rounded-3xl p-12 text-center hover:border-brand-200 hover:bg-brand-50/20 transition-all group cursor-pointer relative overflow-hidden">
+                          <div className="mb-6 relative z-10">
+                            <select
+                              value={selectedComponent}
+                              onChange={(event) => setSelectedComponent(event.target.value)}
+                              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-500"
+                            >
+                              <option value="">Select Pending Component</option>
+                              {pendingComponents.map((component) => (
+                                <option key={component} value={component}>{component}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <input 
+                            type="file" 
+                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                            onChange={handleUpload}
+                            disabled={uploading || pendingComponents.length === 0 || !selectedComponent}
+                          />
+                          <div className="flex flex-col items-center gap-6">
+                             <div className="w-24 h-24 bg-brand-50 text-brand-600 rounded-3xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-xl shadow-brand-100/50">
+                                <Upload className="w-10 h-10" />
+                             </div>
+                             <div>
+                                <p className="text-xl font-black text-gray-900 uppercase tracking-tight">Drag & Drop Results</p>
+                                <p className="text-sm text-gray-400 font-bold mt-2 uppercase tracking-widest">Supported: PDF, JPG, PNG (Max 10MB)</p>
+                             </div>
+                             <Button 
+                               loading={uploading}
+                               variant="secondary" 
+                               className="px-8 py-3 rounded-2xl border-gray-200 font-black uppercase tracking-widest text-xs"
+                               disabled={pendingComponents.length === 0 || !selectedComponent}
+                             >
+                               Select Files from storage
+                             </Button>
+                          </div>
                         </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Pending Components</h4>
+                        <Card className="p-5 rounded-3xl border border-gray-100 shadow-none">
+                          <div className="space-y-3">
+                            {uploadedComponents.map((component) => (
+                              <div key={`uploaded-${component}`} className="flex items-center justify-between rounded-2xl bg-green-50 px-4 py-3 border border-green-100">
+                                <span className="text-xs font-black uppercase tracking-wider text-green-800">{component}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-green-700">Uploaded</span>
+                              </div>
+                            ))}
+                            {pendingComponents.map((component) => (
+                              <div key={`pending-${component}`} className="flex items-center justify-between rounded-2xl bg-red-50 px-4 py-3 border border-red-100">
+                                <span className="text-xs font-black uppercase tracking-wider text-red-800">{component}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-red-700">Pending</span>
+                              </div>
+                            ))}
+                            {pendingComponents.length === 0 && uploadedComponents.length === 0 && (
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center py-6">No components available</p>
+                            )}
+                          </div>
+                        </Card>
+
+                        {currentAppointment.validationFlags?.length > 0 && (
+                          <div className="p-5 bg-red-50 rounded-3xl border border-red-200">
+                            <p className="text-sm font-black text-red-800 uppercase tracking-wide">Red Flag Warning</p>
+                            <div className="mt-3 space-y-2">
+                              {currentAppointment.validationFlags.map((flag) => (
+                                <p key={flag} className="text-xs font-bold text-red-700">{flag}</p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Existing Reports */}
-                    {appointment.reports?.length > 0 && (
+                    {currentAppointment.reports?.length > 0 && (
                       <div className="space-y-6">
-                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Available Reports ({appointment.reports.length})</h4>
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Available Reports ({currentAppointment.reports.length})</h4>
                         <div className="space-y-4">
-                          {appointment.reports.map((report) => (
+                          {currentAppointment.reports.map((report) => (
                             <div key={report.id || report.name} className="p-6 bg-white rounded-2xl border border-gray-100 flex items-center justify-between group hover:border-brand-100 hover:shadow-xl hover:shadow-gray-100/50 transition-all">
                               <div className="flex items-center gap-5">
                                 <div className="p-3 bg-red-50 text-red-600 rounded-xl group-hover:scale-110 transition-transform">
@@ -377,7 +434,7 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                                 </div>
                                 <div>
                                   <p className="font-black text-gray-900 text-sm uppercase tracking-tight">{report.name}</p>
-                                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{report.size} • PDF Document</p>
+                                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{report.componentName || 'General'} • {report.size || 'PDF Document'}</p>
                                 </div>
                               </div>
                               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -388,7 +445,7 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                           ))}
                         </div>
                         
-                        {appointment.status === 'verification_required' && (
+                        {currentAppointment.status === 'verification_required' && (
                           <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100 flex items-start gap-5">
                              <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-amber-200">
                                 <Clock className="w-6 h-6" />
