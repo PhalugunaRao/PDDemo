@@ -50,6 +50,7 @@ export const AppointmentsPage = () => {
   const isConfirmationPendingTab = activeTab === 'Pending';
   const isConfirmedTab = activeTab === 'Confirmed';
   const isPartialTab = activeTab === 'Partial';
+  const getAppointmentDateKey = (appointmentDate) => format(parseISO(appointmentDate), 'yyyy-MM-dd');
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -77,6 +78,10 @@ export const AppointmentsPage = () => {
 
   const closePendingInfoDialog = () => {
     setOpenPendingInfo(null);
+  };
+
+  const clearConfirmedDateFilter = () => {
+    setConfirmedDateFilter('');
   };
 
   const submitPendingAction = () => {
@@ -134,15 +139,15 @@ export const AppointmentsPage = () => {
     
     // Date filters (Today/Tomorrow)
     if (activeTab === 'Today') {
-      filtered = filtered.filter(a => a.date.startsWith(today));
+      filtered = filtered.filter(a => getAppointmentDateKey(a.date) === today);
     }
     if (activeTab === 'Tomorrow') {
-      filtered = filtered.filter(a => a.date.startsWith(tomorrow));
+      filtered = filtered.filter(a => getAppointmentDateKey(a.date) === tomorrow);
     }
 
     if (activeTab === 'Confirmed' && confirmedDateFilter) {
       filtered = filtered
-        .filter(a => a.date.startsWith(confirmedDateFilter))
+        .filter(a => getAppointmentDateKey(a.date) === confirmedDateFilter)
         .sort((a, b) => parseISO(a.date) - parseISO(b.date));
     }
 
@@ -176,16 +181,31 @@ export const AppointmentsPage = () => {
               />
            </div>
            {isConfirmedTab && (
-             <input
-               type="date"
-               value={confirmedDateFilter}
-               onChange={(e) => setConfirmedDateFilter(e.target.value)}
-               className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all shadow-sm"
-             />
+             <>
+               <input
+                 type="date"
+                 value={confirmedDateFilter}
+                 onChange={(e) => setConfirmedDateFilter(e.target.value)}
+                 onClick={(event) => event.currentTarget.showPicker?.()}
+                 onFocus={(event) => event.currentTarget.showPicker?.()}
+                 className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all shadow-sm"
+               />
+               {confirmedDateFilter && (
+                 <button
+                   type="button"
+                   onClick={clearConfirmedDateFilter}
+                   className="px-4 py-3 bg-white border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
+                 >
+                   Clear
+                 </button>
+               )}
+             </>
            )}
-           <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 rounded-xl hover:bg-gray-50 transition-all shadow-sm">
-             <Filter className="w-4 h-4" /> Filter
-           </button>
+           {!isConfirmedTab && (
+             <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 rounded-xl hover:bg-gray-50 transition-all shadow-sm">
+               <Filter className="w-4 h-4" /> Filter
+             </button>
+           )}
         </div>
       </div>
 

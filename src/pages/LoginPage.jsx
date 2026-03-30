@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ShieldCheck, 
-  Mail, 
-  Lock, 
-  ArrowRight, 
-  AlertCircle,
+import {
+  ShieldCheck,
+  Mail,
+  Lock,
+  ArrowRight,
   Building2,
   Globe2
 } from 'lucide-react';
@@ -36,7 +35,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f7fb] relative overflow-hidden px-4 py-8 md:px-8">
+    <div className="h-screen bg-[#f3f7fb] relative overflow-hidden p-4 md:px-8 md:py-4">
       <div className="absolute inset-y-0 right-0 w-[42%] bg-gradient-to-b from-[#d9f1ff] via-[#f6fbff] to-white" />
       <div className="absolute top-[-120px] right-[-120px] h-[320px] w-[320px] rounded-full bg-[#9ed8ff]/35 blur-3xl" />
       <div className="absolute bottom-[-120px] left-[-120px] h-[280px] w-[280px] rounded-full bg-brand-200/40 blur-3xl" />
@@ -44,9 +43,9 @@ export const LoginPage = () => {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl grid-cols-1 overflow-hidden rounded-[2rem] border border-white/60 bg-white/80 shadow-2xl shadow-sky-100/60 backdrop-blur xl:grid-cols-[1.1fr_0.9fr]"
+        className="relative z-10 mx-auto grid h-full max-h-[calc(100vh-2rem)] max-w-6xl grid-cols-1 overflow-hidden rounded-[2rem] border border-white/60 bg-white/80 shadow-2xl shadow-sky-100/60 backdrop-blur xl:grid-cols-[1.1fr_0.9fr]"
       >
-        <div className="hidden xl:flex flex-col justify-between bg-[linear-gradient(160deg,#0b5cab_0%,#1d7cd8_55%,#8fd2ff_100%)] p-12 text-white">
+        <div className="hidden xl:flex flex-col justify-between overflow-hidden bg-[linear-gradient(160deg,#0b5cab_0%,#1d7cd8_55%,#8fd2ff_100%)] p-10 text-white">
           <div>
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/15 backdrop-blur">
@@ -80,9 +79,9 @@ export const LoginPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-center p-6 sm:p-10 xl:p-14">
+        <div className="flex items-center justify-center overflow-y-auto p-6 sm:p-8 xl:p-10">
           <div className="w-full max-w-md">
-            <div className="mb-8 xl:hidden">
+            <div className="mb-6 xl:hidden">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-brand-600 text-white shadow-xl shadow-brand-100">
                   <ShieldCheck className="h-8 w-8" />
@@ -94,7 +93,7 @@ export const LoginPage = () => {
               </div>
             </div>
 
-            <div className="mb-8">
+            <div className="mb-6">
               <p className="text-[11px] font-black uppercase tracking-[0.32em] text-brand-600">Welcome Back</p>
               <h2 className="mt-3 text-4xl font-black tracking-tight text-gray-900">Sign in to continue</h2>
               <p className="mt-3 text-sm font-medium leading-6 text-gray-500">
@@ -102,7 +101,7 @@ export const LoginPage = () => {
               </p>
             </div>
 
-            <div className="mb-8 grid grid-cols-2 gap-3 rounded-3xl bg-gray-100 p-2">
+            <div className="mb-6 grid grid-cols-2 gap-3 rounded-3xl bg-gray-100 p-2">
               <button
                 type="button"
                 onClick={() => setLoginType('PAN_INDIA')}
@@ -123,8 +122,8 @@ export const LoginPage = () => {
               </button>
             </div>
 
-            <div className="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-xl shadow-sky-100/40">
-              <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="rounded-[2rem] border border-gray-100 bg-white p-6 shadow-xl shadow-sky-100/40 sm:p-7">
+              <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-gray-700 ml-1 uppercase tracking-wider">Email Address</label>
                   <div className="relative group">
@@ -182,17 +181,6 @@ export const LoginPage = () => {
                   </span>
                 </Button>
               </form>
-
-              <div className="mt-8 pt-8 border-t border-gray-100/50 text-center">
-                <p className="text-gray-500 text-sm">Demo credentials (auto-filled)</p>
-                <div className="mt-4 flex items-center justify-center gap-2 p-3 bg-brand-50/50 rounded-xl border border-brand-100 uppercase tracking-widest text-[9px] font-black text-brand-700">
-                  admin@provider.com / mediSync@demo2025
-                </div>
-                <div className="mt-4 flex items-center justify-center gap-2 p-3 bg-brand-50/50 rounded-xl border border-brand-100">
-                  <AlertCircle className="w-4 h-4 text-brand-600" />
-                  <p className="text-xs font-bold text-brand-700 uppercase tracking-widest leading-none">Testing Environment Active</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
