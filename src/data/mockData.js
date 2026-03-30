@@ -1,4 +1,4 @@
-import { addDays, subDays, startOfToday, format, setHours, setMinutes, subMonths } from 'date-fns';
+import { addDays, subDays, startOfToday, format, setHours, setMinutes, subMonths, subMinutes } from 'date-fns';
 
 const STAGES = ['requested', 'accepted', 'rejected', 'customer_arrived', 'sample_collected', 'report_uploaded', 'completed'];
 const PACKAGES = [
@@ -32,6 +32,7 @@ const generateAppointment = (id) => {
     phone: `+91 98${Math.floor(Math.random() * 100000000)}`,
     email: `cust${id}@ekincare.com`,
     date: date.toISOString(),
+    createdAt: dateOffset === 0 ? subMinutes(new Date(), Math.floor(Math.random() * 20)).toISOString() : subDays(date, 1).toISOString(),
     package: PACKAGES[Math.floor(Math.random() * PACKAGES.length)],
     status,
     branch: BRANCHES[0],

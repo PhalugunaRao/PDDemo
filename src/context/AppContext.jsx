@@ -100,6 +100,7 @@ export const AppProvider = ({ children }) => {
       ...appointment,
       status: mapVendorStatusToStatus(normalizedVendorStatus),
       vendor_status: normalizedVendorStatus,
+      createdAt: appointment.createdAt || appointment.auditLog?.[0]?.timestamp || appointment.date,
       reports: appointment.reports || [],
       validationFlags: appointment.validationFlags || [],
       pendingComponents: appointment.pendingComponents || getPendingComponents(appointment.tests),
@@ -111,11 +112,17 @@ export const AppProvider = ({ children }) => {
   const mapRawToApp = (raw) => {
     // Attempt to parse date/time safely
     let isoDate = new Date().toISOString();
+    let createdAt = new Date().toISOString();
     try {
       if (raw.appointment_date && raw.appointment_time) {
         const dateStr = `${raw.appointment_date} ${raw.appointment_time}`;
         const parsed = parse(dateStr, 'yyyy-MM-dd hh:mm a', new Date());
         isoDate = parsed.toISOString();
+      }
+      if (raw.registration_date && raw.time) {
+        const createdAtStr = `${raw.registration_date} ${raw.time}`;
+        const parsedCreatedAt = parse(createdAtStr, 'yyyy-MM-dd hh:mm a', new Date());
+        createdAt = parsedCreatedAt.toISOString();
       }
     } catch {
       console.warn('Failed to parse date for', raw.appointment_id);
@@ -129,6 +136,7 @@ export const AppProvider = ({ children }) => {
       phone: raw.mobile_number,
       email: `${raw.name.toLowerCase().replace(/\s+/g, '.')}@patient-ek.com`,
       date: isoDate,
+      createdAt,
       package: raw.package_name?.[0] || 'Standard Package',
       status: mapVendorStatusToStatus(raw.vendor_status),
       vendor_status: normalizeVendorStatus(raw.vendor_status),

@@ -1,12 +1,303 @@
 export const RAW_APPOINTMENTS = [
     {
+        "registration_date": "2026-03-30",
+        "time": "03:00 PM",
+        "name": "Demo",
+        "appointmentee_id": 2826388,
+        "id": 600030,
+        "appointment_date": "2026-03-30",
+        "appointment_id": "APTTQJY0O2KB",
+        "provider_id": 32036,
+        "appointment_time": "03:00 pm",
+        "package_id": null,
+        "package_ids": [
+          1609
+        ],
+        "package_name": [
+          "Test CBP_22"
+        ],
+        "list_of_reports_to_be_received": [
+          "pathology"
+        ],
+        "missing_reports": false,
+        "list_of_missing_reports": [
+          "pathology"
+        ],
+        "vendor_status": "NEW",
+        "branch": "Hi-Tech City, Hyderabad",
+        "age_and_gender": "25, Male",
+        "home_collection": false,
+        "mobile_number": "+91-6798939244",
+        "home_address": ", ",
+        "id_details": null,
+        "cowin_registration": null,
+        "time_since_create": 29637,
+        "time_since_create_color": "red",
+        "appointment_tests": {
+          "Anemia Profile": [
+            {
+              "id": 2531892,
+              "appointment_id": 600030,
+              "test_name": "Anemia Profile",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.870Z",
+              "updated_at": "2022-11-11T06:19:57.870Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Blood Glucose": [
+            {
+              "id": 2531893,
+              "appointment_id": 600030,
+              "test_name": "Blood Glucose",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.877Z",
+              "updated_at": "2022-11-11T06:19:57.877Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Cholera": [
+            {
+              "id": 2531895,
+              "appointment_id": 600030,
+              "test_name": "Cholera",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.892Z",
+              "updated_at": "2022-11-11T06:19:57.892Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Lipid Profile": [
+            {
+              "id": 2531894,
+              "appointment_id": 600030,
+              "test_name": "Lipid Profile",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.884Z",
+              "updated_at": "2022-11-11T06:19:57.884Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ]
+        },
+        "national_identity_number": null,
+        "benefit_type": "pre_employment",
+        "customer_id": "EKI604296928",
+        "doctor_name": ""
+      },
+      {
+        "registration_date": "2026-03-30",
+        "time": "08:00 AM",
+        "name": "Demo",
+        "appointmentee_id": 2826388,
+        "id": 600030,
+        "appointment_date": "2026-03-30",
+        "appointment_id": "APTTQJY0O2KL",
+        "provider_id": 32036,
+        "appointment_time": "08:00 am",
+        "package_id": null,
+        "package_ids": [
+          1609
+        ],
+        "package_name": [
+          "Test CBP_22"
+        ],
+        "list_of_reports_to_be_received": [
+          "pathology"
+        ],
+        "missing_reports": false,
+        "list_of_missing_reports": [
+          "pathology"
+        ],
+        "vendor_status": "NEW",
+        "branch": "Hi-Tech City, Hyderabad",
+        "age_and_gender": "25, Male",
+        "home_collection": false,
+        "mobile_number": "+91-6798939244",
+        "home_address": ", ",
+        "id_details": null,
+        "cowin_registration": null,
+        "time_since_create": 29637,
+        "time_since_create_color": "red",
+        "appointment_tests": {
+          "Anemia Profile": [
+            {
+              "id": 2531892,
+              "appointment_id": 600030,
+              "test_name": "Anemia Profile",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.870Z",
+              "updated_at": "2022-11-11T06:19:57.870Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Blood Glucose": [
+            {
+              "id": 2531893,
+              "appointment_id": 600030,
+              "test_name": "Blood Glucose",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.877Z",
+              "updated_at": "2022-11-11T06:19:57.877Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Cholera": [
+            {
+              "id": 2531895,
+              "appointment_id": 600030,
+              "test_name": "Cholera",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.892Z",
+              "updated_at": "2022-11-11T06:19:57.892Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Lipid Profile": [
+            {
+              "id": 2531894,
+              "appointment_id": 600030,
+              "test_name": "Lipid Profile",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.884Z",
+              "updated_at": "2022-11-11T06:19:57.884Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ]
+        },
+        "national_identity_number": null,
+        "benefit_type": "pre_employment",
+        "customer_id": "EKI604296928",
+        "doctor_name": ""
+      },
+      {
+        "registration_date": "2026-03-29",
+        "time": "08:00 AM",
+        "name": "Demo",
+        "appointmentee_id": 2826388,
+        "id": 600030,
+        "appointment_date": "2026-03-29",
+        "appointment_id": "APTTQJY0O2KF",
+        "provider_id": 32036,
+        "appointment_time": "08:00 am",
+        "package_id": null,
+        "package_ids": [
+          1609
+        ],
+        "package_name": [
+          "Test CBP_22"
+        ],
+        "list_of_reports_to_be_received": [
+          "pathology"
+        ],
+        "missing_reports": false,
+        "list_of_missing_reports": [
+          "pathology"
+        ],
+        "vendor_status": "NEW",
+        "branch": "Hi-Tech City, Hyderabad",
+        "age_and_gender": "25, Male",
+        "home_collection": false,
+        "mobile_number": "+91-6798939244",
+        "home_address": ", ",
+        "id_details": null,
+        "cowin_registration": null,
+        "time_since_create": 29637,
+        "time_since_create_color": "red",
+        "appointment_tests": {
+          "Anemia Profile": [
+            {
+              "id": 2531892,
+              "appointment_id": 600030,
+              "test_name": "Anemia Profile",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.870Z",
+              "updated_at": "2022-11-11T06:19:57.870Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Blood Glucose": [
+            {
+              "id": 2531893,
+              "appointment_id": 600030,
+              "test_name": "Blood Glucose",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.877Z",
+              "updated_at": "2022-11-11T06:19:57.877Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Cholera": [
+            {
+              "id": 2531895,
+              "appointment_id": 600030,
+              "test_name": "Cholera",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.892Z",
+              "updated_at": "2022-11-11T06:19:57.892Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ],
+          "Lipid Profile": [
+            {
+              "id": 2531894,
+              "appointment_id": 600030,
+              "test_name": "Lipid Profile",
+              "result_received": false,
+              "created_at": "2022-11-11T06:19:57.884Z",
+              "updated_at": "2022-11-11T06:19:57.884Z",
+              "verified_by_staff_id": null,
+              "test_component": null,
+              "lonic_code": null,
+              "category": null
+            }
+          ]
+        },
+        "national_identity_number": null,
+        "benefit_type": "pre_employment",
+        "customer_id": "EKI604296928",
+        "doctor_name": ""
+      },
+    {
         "registration_date": "2022-11-11",
         "time": "08:00 AM",
         "name": "Demo",
         "appointmentee_id": 2826388,
         "id": 600030,
         "appointment_date": "2022-11-18",
-        "appointment_id": "APTTQJY0O2KB",
+        "appointment_id": "APTTQJY0O2KG",
         "provider_id": 32036,
         "appointment_time": "08:00 am",
         "package_id": null,

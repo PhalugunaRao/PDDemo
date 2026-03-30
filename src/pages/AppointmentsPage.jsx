@@ -44,6 +44,7 @@ export const AppointmentsPage = () => {
   const [pendingAction, setPendingAction] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [remarksError, setRemarksError] = useState('');
+  const slaFilter = searchParams.get('sla');
   const isConfirmationPendingTab = activeTab === 'Pending';
   const isConfirmedTab = activeTab === 'Confirmed';
   const isPartialTab = activeTab === 'Partial';
@@ -142,9 +143,20 @@ export const AppointmentsPage = () => {
         .filter(a => a.date.startsWith(confirmedDateFilter))
         .sort((a, b) => parseISO(a.date) - parseISO(b.date));
     }
+
+    if (activeTab === 'Today' && slaFilter) {
+      filtered = filtered.filter((appointment) => {
+        const diffMinutes = (Date.now() - new Date(appointment.date).getTime()) / (1000 * 60);
+
+        if (slaFilter === 'green') return diffMinutes <= 7;
+        if (slaFilter === 'amber') return diffMinutes > 7 && diffMinutes <= 15;
+        if (slaFilter === 'red') return diffMinutes > 15;
+        return true;
+      });
+    }
     
     return filtered;
-  }, [appointments, activeTab, searchTerm, confirmedDateFilter]);
+  }, [appointments, activeTab, searchTerm, confirmedDateFilter, slaFilter]);
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
