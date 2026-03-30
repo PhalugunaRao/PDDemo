@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { RAW_APPOINTMENTS } from '../data/realAppointments';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { AppointmentDetailDrawer } from '../components/AppointmentDetailDrawer';
 import { 
   Calendar, 
   Upload, 
@@ -35,6 +36,7 @@ export const DashboardHome = () => {
   const { updateAppointmentStatus } = useAppContext();
   const [activeFilter, setActiveFilter] = useState('today');
   const [pendingAction, setPendingAction] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [remarksError, setRemarksError] = useState('');
   const todayKey = new Date().toISOString().split('T')[0];
@@ -288,7 +290,10 @@ export const DashboardHome = () => {
                               </button>
                             </>
                           ) : (
-                            <button className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95">
+                            <button
+                              onClick={() => setSelectedAppointment(appointment)}
+                              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
+                            >
                               <Upload className="w-3.5 h-3.5" /> Upload Reports
                             </button>
                           )}
@@ -414,6 +419,12 @@ export const DashboardHome = () => {
           </Card>
         </div>
       )}
+
+      <AppointmentDetailDrawer
+        appointment={selectedAppointment}
+        isOpen={!!selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+      />
     </div>
   );
 };

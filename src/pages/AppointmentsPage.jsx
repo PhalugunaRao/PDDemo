@@ -17,6 +17,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { AppointmentDetailDrawer } from '../components/AppointmentDetailDrawer';
 import { format, parseISO } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
 
@@ -42,6 +43,7 @@ export const AppointmentsPage = () => {
   const [confirmedDateFilter, setConfirmedDateFilter] = useState('');
   const [openPendingInfo, setOpenPendingInfo] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [remarksError, setRemarksError] = useState('');
   const slaFilter = searchParams.get('sla');
@@ -266,7 +268,8 @@ export const AppointmentsPage = () => {
                           </button>
                         </>
                       ) : (
-                        <button 
+                        <button
+                          onClick={() => setSelectedAppointment(apt)}
                           className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
                         >
                           <Upload className="w-3.5 h-3.5" /> Upload Reports
@@ -468,6 +471,12 @@ export const AppointmentsPage = () => {
           </Card>
         </div>
       )}
+
+      <AppointmentDetailDrawer
+        appointment={selectedAppointment}
+        isOpen={!!selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+      />
     </div>
   );
 };

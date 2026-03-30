@@ -229,22 +229,27 @@ export const AppProvider = ({ children }) => {
     toast.success(`APT ${id} updated to ${newStatus}`);
   };
 
-  const uploadReport = (id, file, componentName = '') => {
+  const uploadReport = (id, fileInput, componentInput = []) => {
     setAppointments(prev => prev.map(apt => {
       if (apt.id === id) {
+        const files = Array.isArray(fileInput) ? fileInput : [fileInput];
+        const componentNames = Array.isArray(componentInput)
+          ? componentInput.filter(Boolean)
+          : [componentInput].filter(Boolean);
+        const componentSet = new Set(componentNames);
         const updatedTests = Object.fromEntries(
           Object.entries(apt.tests || {}).map(([category, tests]) => [
             category,
             (tests || []).map(test => {
               const label = test.test_component || test.test_name;
-              return label === componentName ? { ...test, result_received: true } : test;
+              return componentSet.has(label) ? { ...test, result_received: true } : test;
             }),
           ])
         );
         const pendingComponents = getPendingComponents(updatedTests);
         const uploadedComponents = getUploadedComponents(updatedTests);
-        const extractedProfile = extractReportProfile(file.name);
-        const validationFlags = buildValidationFlags(apt, extractedProfile);
+        const extractedProfiles = files.map((file) => extractReportProfile(file.name));
+        const validationFlags = extractedProfiles.flatMap((profile) => buildValidationFlags(apt, profile));
         const nextStatus = pendingComponents.length > 0 ? 'partially_received' : 'report_uploaded';
 
         return {
@@ -254,20 +259,21 @@ export const AppProvider = ({ children }) => {
           tests: updatedTests,
           reports: [
             ...(apt.reports || []),
-            {
+            ...files.map((file, index) => ({
               name: file.name,
               date: new Date().toISOString(),
-              componentName,
-              extractedProfile,
+              componentName: componentNames.join(', '),
+              componentNames,
+              extractedProfile: extractedProfiles[index],
               validationFlags,
-            }
+            }))
           ],
           pendingComponents,
           uploadedComponents,
           validationFlags,
           auditLog: [
             ...(apt.auditLog || []),
-            { action: `Report Uploaded${componentName ? ` for ${componentName}` : ''}`, timestamp: new Date().toISOString(), user: 'Operator' },
+            { action: `Report Uploaded${componentNames.length ? ` for ${componentNames.join(', ')}` : ''}`, timestamp: new Date().toISOString(), user: 'Operator' },
             ...validationFlags.map(flag => ({ action: `Red Flag: ${flag}`, timestamp: new Date().toISOString(), user: 'AI Validator' }))
           ]
         };

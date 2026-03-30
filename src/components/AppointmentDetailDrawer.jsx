@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Check, 
   X, 
@@ -31,22 +31,93 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
   const { appointments, updateAppointmentStatus, uploadReport } = useAppContext();
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
-  const [selectedComponent, setSelectedComponent] = useState('');
+  const [selectedComponents, setSelectedComponents] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadError, setUploadError] = useState('');
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const fileInputRef = useRef(null);
 
-  if (!appointment) return null;
+  const validateAndStoreFiles = (files) => {
+    if (!files.length) {
+      setSelectedFiles([]);
+      setUploadError('');
+      return;
+    }
 
-  const currentAppointment = appointments.find((item) => item.id === appointment.id) || appointment;
-  const pendingComponents = currentAppointment.pendingComponents || [];
-  const uploadedComponents = currentAppointment.uploadedComponents || [];
+    const invalidFile = files.find((file) => {
+      const lowerName = file.name.toLowerCase();
+      return file.type !== 'application/pdf' && !lowerName.endsWith('.pdf');
+    });
 
-  const handleUpload = (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !selectedComponent) return;
+    if (invalidFile) {
+      setSelectedFiles([]);
+      setUploadError('Only PDF files are allowed.');
+      setFileInputKey((current) => current + 1);
+      return;
+    }
+
+    setSelectedFiles(files);
+    setUploadError('');
+  };
+
+  const handleFileSelection = (event) => {
+    const files = Array.from(event.target.files || []);
+    validateAndStoreFiles(files);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDragActive(false);
+
+    if (uploading || pendingComponents.length === 0 || selectedComponents.length === 0) return;
+
+    const files = Array.from(event.dataTransfer.files || []);
+    validateAndStoreFiles(files);
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    if (uploading || pendingComponents.length === 0 || selectedComponents.length === 0) return;
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setIsDragActive(false);
+    }
+  };
+
+  const openFilePicker = () => {
+    if (uploading || pendingComponents.length === 0 || selectedComponents.length === 0) return;
+    fileInputRef.current?.click();
+  };
+
+  const toggleComponentSelection = (component) => {
+    setSelectedComponents((current) =>
+      current.includes(component)
+        ? current.filter((item) => item !== component)
+        : [...current, component]
+    );
+  };
+
+  const toggleSelectAllComponents = () => {
+    setSelectedComponents((current) =>
+      current.length === pendingComponents.length ? [] : [...pendingComponents]
+    );
+  };
+
+  const handleUpload = () => {
+    if (!selectedFiles.length || selectedComponents.length === 0) return;
 
     setUploading(true);
     setTimeout(() => {
-      uploadReport(currentAppointment.id, file, selectedComponent);
-      setSelectedComponent('');
+      uploadReport(currentAppointment.id, selectedFiles, selectedComponents);
+      setSelectedComponents([]);
+      setSelectedFiles([]);
+      setUploadError('');
+      setFileInputKey((current) => current + 1);
       setUploading(false);
     }, 2000);
   };
@@ -58,23 +129,50 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!appointment?.id) return;
+
+    setSelectedComponents([]);
+    setSelectedFiles([]);
+    setUploadError('');
+    setIsDragActive(false);
+    setFileInputKey((current) => current + 1);
+  }, [appointment?.id]);
+
+  if (!appointment) return null;
+
+  const currentAppointment = appointments.find((item) => item.id === appointment.id) || appointment;
+  const pendingComponents = currentAppointment.pendingComponents || [];
+  const uploadedComponents = currentAppointment.uploadedComponents || [];
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <div className="fixed inset-0 z-[120]">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100]"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           />
           <motion.div 
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl z-[101] flex flex-col overflow-hidden border-l border-gray-100"
+            className="absolute top-24 bottom-4 right-4 w-[calc(100%-1rem)] max-w-2xl bg-white shadow-2xl flex flex-col overflow-hidden border border-gray-100 rounded-[2rem]"
           >
             {/* Header */}
             <div className="p-8 border-b border-gray-50 bg-gradient-to-r from-gray-50/50 to-white">
@@ -347,24 +445,55 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.9fr)] gap-6 items-start">
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Upload Diagnostics</h4>
-                        <div className="border-4 border-dashed border-gray-100 rounded-3xl p-12 text-center hover:border-brand-200 hover:bg-brand-50/20 transition-all group cursor-pointer relative overflow-hidden">
+                        <div
+                          className={`border-4 border-dashed rounded-3xl p-12 text-center transition-all group relative overflow-hidden ${
+                            isDragActive
+                              ? 'border-brand-300 bg-brand-50/30'
+                              : 'border-gray-100 hover:border-brand-200 hover:bg-brand-50/20'
+                          }`}
+                          onDrop={handleDrop}
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                        >
                           <div className="mb-6 relative z-10">
-                            <select
-                              value={selectedComponent}
-                              onChange={(event) => setSelectedComponent(event.target.value)}
-                              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-500"
-                            >
-                              <option value="">Select Pending Component</option>
-                              {pendingComponents.map((component) => (
-                                <option key={component} value={component}>{component}</option>
-                              ))}
-                            </select>
+                            <div className="rounded-2xl border border-gray-200 bg-white p-4 text-left">
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Select Components Included In This Report</p>
+                                {pendingComponents.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={toggleSelectAllComponents}
+                                    className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-700 transition-colors"
+                                  >
+                                    {selectedComponents.length === pendingComponents.length ? 'Clear All' : 'Select All'}
+                                  </button>
+                                )}
+                              </div>
+                              <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1">
+                                {pendingComponents.map((component) => (
+                                  <label key={component} className="flex items-start gap-3 rounded-xl border border-gray-100 px-3 py-3 cursor-pointer hover:border-brand-200 transition-all">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedComponents.includes(component)}
+                                      onChange={() => toggleComponentSelection(component)}
+                                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                    />
+                                    <span className="text-xs font-black uppercase tracking-wide text-gray-700">{component}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
                           </div>
-                          <input 
-                            type="file" 
-                            className="absolute inset-0 opacity-0 cursor-pointer" 
-                            onChange={handleUpload}
-                            disabled={uploading || pendingComponents.length === 0 || !selectedComponent}
+                          <input
+                            key={fileInputKey}
+                            id={`report-upload-${currentAppointment.id}`}
+                            ref={fileInputRef}
+                            type="file"
+                            accept="application/pdf,.pdf"
+                            multiple
+                            className="hidden"
+                            onChange={handleFileSelection}
+                            disabled={uploading || pendingComponents.length === 0 || selectedComponents.length === 0}
                           />
                           <div className="flex flex-col items-center gap-6">
                              <div className="w-24 h-24 bg-brand-50 text-brand-600 rounded-3xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-xl shadow-brand-100/50">
@@ -372,16 +501,59 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                              </div>
                              <div>
                                 <p className="text-xl font-black text-gray-900 uppercase tracking-tight">Drag & Drop Results</p>
-                                <p className="text-sm text-gray-400 font-bold mt-2 uppercase tracking-widest">Supported: PDF, JPG, PNG (Max 10MB)</p>
+                                <p className="text-sm text-gray-400 font-bold mt-2 uppercase tracking-widest">Supported: PDF only</p>
                              </div>
-                             <Button 
-                               loading={uploading}
-                               variant="secondary" 
-                               className="px-8 py-3 rounded-2xl border-gray-200 font-black uppercase tracking-widest text-xs"
-                               disabled={pendingComponents.length === 0 || !selectedComponent}
-                             >
-                               Select Files from storage
-                             </Button>
+                             <div className="flex flex-col items-center gap-3">
+                               <Button
+                                 type="button"
+                                 onClick={openFilePicker}
+                                 variant="secondary"
+                                 className="px-8 py-3 rounded-2xl border-gray-200 font-black uppercase tracking-widest text-xs"
+                                 disabled={uploading || pendingComponents.length === 0 || selectedComponents.length === 0}
+                               >
+                                 Select PDF Files
+                               </Button>
+                               <Button
+                                 type="button"
+                                 loading={uploading}
+                                 variant="primary"
+                                 onClick={handleUpload}
+                                 className="px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-xs"
+                                 disabled={uploading || pendingComponents.length === 0 || selectedComponents.length === 0 || selectedFiles.length === 0}
+                               >
+                                 Upload
+                               </Button>
+                             </div>
+                             {selectedComponents.length > 0 && (
+                               <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white/80 px-4 py-3 text-left">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Selected Components</p>
+                                 <div className="mt-2 flex flex-wrap gap-2">
+                                   {selectedComponents.map((component) => (
+                                     <span
+                                       key={component}
+                                       className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-blue-50 text-blue-700 border-blue-200"
+                                     >
+                                       {component}
+                                     </span>
+                                   ))}
+                                 </div>
+                               </div>
+                             )}
+                             {selectedFiles.length > 0 && (
+                               <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white/80 px-4 py-3 text-left">
+                                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Selected Files</p>
+                                 <div className="mt-2 space-y-1">
+                                   {selectedFiles.map((file) => (
+                                     <p key={`${file.name}-${file.size}`} className="text-xs font-bold text-gray-700 truncate">
+                                       {file.name}
+                                     </p>
+                                   ))}
+                                 </div>
+                               </div>
+                             )}
+                             {uploadError && (
+                               <p className="text-xs font-bold text-red-600">{uploadError}</p>
+                             )}
                           </div>
                         </div>
                       </div>
@@ -465,7 +637,7 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
               </AnimatePresence>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );
