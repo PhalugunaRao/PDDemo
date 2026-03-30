@@ -86,6 +86,10 @@ export const MOCK_SUPPORT = {
 // Facility Mock Data
 export const MOCK_FACILITY = {
   name: 'Central Diagnostic Center',
+  branchName: 'Central Clinic - HSR Layout',
+  providerId: 'PROV-32036',
+  enterpriseId: 'ENT-604296928',
+  partnerSetupEmail: 'partner-setup@ekincare.com',
   address: 'HSR Layout, Sector 2, Bangalore, KA - 560102',
   operationalHours: '08:00 AM - 08:00 PM',
   kycStatus: 'approved', // pending, approved, rejected

@@ -5,6 +5,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Building2, MapPin, Clock, ShieldCheck, Camera, Save, Lock, CheckCircle2, Calendar, FileText, Settings, Settings2, Trash2, Plus, Info, ChevronRight, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export const FacilityManagement = () => {
   const { facility, updateFacility } = useAppContext();
@@ -20,6 +21,54 @@ export const FacilityManagement = () => {
 
   const handleSave = () => {
     updateFacility(formData);
+  };
+
+  const downloadPartnerSetupCsv = () => {
+    const csvRows = [
+      ['Enterprise ID', 'Provider ID', 'Branch Name', 'Partner Update Field', 'Requested Value', 'Comments'],
+      [
+        formData.enterpriseId || '',
+        formData.providerId || '',
+        formData.branchName || formData.name || '',
+        '',
+        '',
+        '',
+      ],
+    ];
+    const csvContent = csvRows.map((row) => row.map((value) => `"${value}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ekincare-partner-setup-${(formData.branchName || formData.name || 'facility').replace(/\s+/g, '-').toLowerCase()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Prefilled ekincare partner setup CSV downloaded');
+  };
+
+  const raisePartnerApprovalTicket = () => {
+    const subject = encodeURIComponent(`Partner setup approval request - ${formData.branchName || formData.name}`);
+    const body = encodeURIComponent(
+      [
+        'Hello Partner Setup Team,',
+        '',
+        'Please review the attached ekincare partner setup CSV and approve the requested changes.',
+        '',
+        `Enterprise ID: ${formData.enterpriseId || ''}`,
+        `Provider ID: ${formData.providerId || ''}`,
+        `Branch Name: ${formData.branchName || formData.name || ''}`,
+        '',
+        'Partner will fill the remaining editable columns in the attached CSV.',
+        '',
+        'Regards,',
+        'Facility Admin',
+      ].join('\n')
+    );
+
+    window.location.href = `mailto:${formData.partnerSetupEmail || 'partner-setup@ekincare.com'}?subject=${subject}&body=${body}`;
+    toast.success('Approval ticket draft opened for partner setup email');
   };
 
   return (
@@ -139,6 +188,72 @@ export const FacilityManagement = () => {
                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-4">Next Closure: 15 AUG (Independence Day)</p>
                       </Card>
                    </div>
+
+                   <Card className="p-8 border-none shadow-xl shadow-gray-200/30 rounded-[2.5rem] bg-white space-y-8">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                              <FileText className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Partner Setup CSV</h3>
+                              <p className="text-sm text-gray-500 mt-1">
+                                Download the ekincare CSV template with facility identifiers prefilled before sharing it with the partner.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge status="confirmed" className="px-4 py-2 text-[10px] font-black uppercase tracking-widest">
+                          Approval Controlled
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <div className="p-5 rounded-3xl border border-gray-100 bg-gray-50/60">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Enterprise ID</p>
+                          <p className="mt-3 text-sm font-black text-gray-900 uppercase tracking-tight">{formData.enterpriseId}</p>
+                        </div>
+                        <div className="p-5 rounded-3xl border border-gray-100 bg-gray-50/60">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Provider ID</p>
+                          <p className="mt-3 text-sm font-black text-gray-900 uppercase tracking-tight">{formData.providerId}</p>
+                        </div>
+                        <div className="p-5 rounded-3xl border border-gray-100 bg-gray-50/60">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Branch Name</p>
+                          <p className="mt-3 text-sm font-black text-gray-900 uppercase tracking-tight">{formData.branchName || formData.name}</p>
+                        </div>
+                        <div className="p-5 rounded-3xl border border-gray-100 bg-gray-50/60">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Approval Mailbox</p>
+                          <p className="mt-3 text-sm font-black text-gray-900 tracking-tight break-all">{formData.partnerSetupEmail}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-6 bg-brand-50/50 rounded-3xl border border-brand-100 flex items-start gap-4">
+                        <Info className="w-6 h-6 text-brand-600 shrink-0" />
+                        <p className="text-xs font-bold text-brand-800 uppercase tracking-wide leading-relaxed">
+                          Enterprise ID, Provider ID, and Branch Name are prefilled by us in the ekincare CSV so the partner only updates the remaining fields. Any requested change must go to the partner setup email as a ticket for approval before processing.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <Button
+                          variant="primary"
+                          onClick={downloadPartnerSetupCsv}
+                          className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                          icon={FileText}
+                        >
+                          Download Prefilled CSV
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={raisePartnerApprovalTicket}
+                          className="px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                          icon={ChevronRight}
+                        >
+                          Raise Approval Ticket
+                        </Button>
+                      </div>
+                   </Card>
                 </motion.div>
               )}
 
