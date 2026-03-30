@@ -4,22 +4,18 @@ import {
   Filter, 
   Calendar, 
   Clock, 
-  MoreVertical, 
   ChevronLeft, 
   ChevronRight,
   Upload,
   Check,
   X,
   FileText,
-  User,
-  MapPin,
   ClipboardList,
   AlertCircle
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO } from 'date-fns';
 
 const TabItem = ({ id, label, icon: Icon, active, onClick }) => (
@@ -38,12 +34,15 @@ const TabItem = ({ id, label, icon: Icon, active, onClick }) => (
 
 export const AppointmentsPage = () => {
   const { appointments, updateAppointmentStatus } = useAppContext();
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState('Pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const isConfirmationPendingTab = activeTab === 'Pending';
+  const isConfirmedTab = activeTab === 'Confirmed';
 
   const tabs = [
     { id: 'Pending', label: 'Confirmation Pending', icon: AlertCircle },
     { id: 'Confirmed', label: 'Confirmed', icon: Check },
+    { id: 'Rejected', label: 'Rejected', icon: X },
     { id: 'Reports', label: 'Pending Reports', icon: FileText },
     { id: 'Partial', label: 'Partially Received', icon: ClipboardList },
     { id: 'Recent', label: 'Uploaded Recently', icon: Upload },
@@ -54,16 +53,36 @@ export const AppointmentsPage = () => {
 
   const filteredData = useMemo(() => {
     let filtered = [...appointments];
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = format(tomorrowDate, 'yyyy-MM-dd');
+
     if (searchTerm) {
+      console.log('Current Appointments Statuses:', appointments.map(a => a.status));
       filtered = filtered.filter(a => 
         a.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
         a.id.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     // Simple tab filtering for demo
-    if (activeTab === 'Pending') filtered = filtered.filter(a => a.status === 'requested');
-    if (activeTab === 'Confirmed') filtered = filtered.filter(a => a.status === 'accepted' || a.status === 'confirmed');
-    if (activeTab === 'Reports') filtered = filtered.filter(a => a.status === 'sample_collected');
+    // Strict tab filtering based on vendor_status mapping
+    if (activeTab === 'Pending') {
+      filtered = filtered.filter(a => a.vendor_status === 'NEW');
+    }
+    if (activeTab === 'Confirmed') filtered = filtered.filter(a => a.vendor_status === 'CONFIRMED');
+    if (activeTab === 'Rejected') filtered = filtered.filter(a => a.vendor_status === 'REJECTED');
+    if (activeTab === 'Reports') filtered = filtered.filter(a => a.status === 'completed');
+    if (activeTab === 'Recent') filtered = filtered.filter(a => a.status === 'uploaded_recently');
+    if (activeTab === 'Partial') filtered = filtered.filter(a => a.status === 'partially_received');
+    
+    // Date filters (Today/Tomorrow)
+    if (activeTab === 'Today') {
+      filtered = filtered.filter(a => a.date.startsWith(today));
+    }
+    if (activeTab === 'Tomorrow') {
+      filtered = filtered.filter(a => a.date.startsWith(tomorrow));
+    }
     
     return filtered;
   }, [appointments, activeTab, searchTerm]);
@@ -140,9 +159,9 @@ export const AppointmentsPage = () => {
                     Dr. Vikram Singh
                   </td>
                   <td className="px-6 py-5">
-                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-sm shadow-red-100">
-                       29690 Hrs
-                    </span>
+                     <span className={`px-3 py-1 rounded-full text-[10px] font-black shadow-sm ${apt.isSlaBreached ? 'bg-red-500 text-white shadow-red-100' : 'bg-green-500 text-white shadow-green-100'}`}>
+                        {apt.timeSinceCreate || '0'} Hrs
+                     </span>
                   </td>
                   <td className="px-6 py-5 font-black uppercase text-[10px]">
                     {apt.home_collection ? 'YES' : 'NO'}
@@ -174,10 +193,10 @@ export const AppointmentsPage = () => {
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center justify-center gap-2">
-                      {apt.status === 'requested' ? (
+                      {isConfirmationPendingTab ? (
                         <>
                           <button 
-                            onClick={() => updateAppointmentStatus(apt.id, 'accepted')}
+                            onClick={() => updateAppointmentStatus(apt.id, 'confirmed')}
                             className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 shadow-sm shadow-green-100 transition-all active:scale-90"
                             title="Confirm"
                           >
@@ -189,6 +208,23 @@ export const AppointmentsPage = () => {
                             title="Reject"
                           >
                              <X className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : isConfirmedTab ? (
+                        <>
+                          <button
+                            onClick={() => updateAppointmentStatus(apt.id, 'completed')}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95"
+                            title="Completed"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Completed
+                          </button>
+                          <button
+                            onClick={() => updateAppointmentStatus(apt.id, 'no-show')}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-md shadow-red-100 active:scale-95"
+                            title="No Show"
+                          >
+                            <X className="w-3.5 h-3.5" /> No Show
                           </button>
                         </>
                       ) : (

@@ -16,7 +16,9 @@ import {
   User,
   Activity,
   ArrowUpRight,
-  Package
+  Package,
+  MapPin,
+  Tag
 } from 'lucide-react';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
@@ -212,17 +214,85 @@ export const AppointmentDetailDrawer = ({ appointment, isOpen, onClose }) => {
                           </div>
                           <div className="flex-1">
                             <div className="flex justify-between items-start">
-                              <h5 className="text-xl font-black text-gray-900 uppercase tracking-tight">{appointment.package}</h5>
-                              <span className="text-2xl font-black text-brand-600">₹{appointment.price}</span>
+                              <div>
+                                <h5 className="text-xl font-black text-gray-900 uppercase tracking-tight">{appointment.package}</h5>
+                                <div className="flex gap-2 mt-1">
+                                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                                    <Tag className="w-3 h-3" /> {appointment.benefitType}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-2xl font-black text-brand-600">₹{Math.floor(appointment.price)}</span>
                             </div>
                             <div className="flex items-center gap-2 mt-4">
                                <span className="px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-brand-100">PRE-PAID</span>
-                               <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-200">62 PARAMETERS</span>
+                               <span className={`px-3 py-1 ${appointment.home_collection ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-gray-100 text-gray-600 border-gray-200'} rounded-full text-[10px] font-black uppercase tracking-widest border`}>
+                                 {appointment.home_collection ? 'HOME COLLECTION' : 'CENTER VISIT'}
+                               </span>
                             </div>
                           </div>
                         </div>
                       </Card>
                     </div>
+
+                    {appointment.address && appointment.address !== ', ' && (
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em] px-1">Collection Address</h4>
+                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-4 hover:bg-white hover:border-brand-100 hover:shadow-lg transition-all">
+                           <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                              <MapPin className="w-5 h-5" />
+                           </div>
+                           <p className="font-bold text-gray-700 text-sm leading-relaxed">{appointment.address}</p>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'tests' && (
+                  <motion.div 
+                    key="tests"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    <div className="flex items-center justify-between px-1">
+                       <h4 className="text-sm font-black text-gray-900 uppercase tracking-[0.1em]">Test Components Breakdown</h4>
+                       <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-3 py-1 rounded-full border border-blue-100 italic">Verified by Laboratory</span>
+                    </div>
+
+                    {appointment.tests ? (
+                      Object.entries(appointment.tests).map(([category, tests]) => (
+                        <div key={category} className="space-y-3">
+                           <div className="flex items-center gap-3">
+                              <div className="h-0.5 flex-1 bg-gray-50" />
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{category}</span>
+                              <div className="h-0.5 flex-1 bg-gray-50" />
+                           </div>
+                           <div className="grid grid-cols-1 gap-3">
+                              {tests.map((test, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-2xl hover:border-blue-200 hover:shadow-lg hover:shadow-blue-50/50 transition-all group">
+                                   <div className="flex items-center gap-4">
+                                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${test.result_received ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
+                                         {test.result_received ? <Check className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                                      </div>
+                                      <div>
+                                         <p className="text-[13px] font-black text-gray-900 uppercase leading-none">{test.test_component || test.test_name}</p>
+                                         <p className="text-[10px] text-gray-400 font-bold mt-1.5 uppercase tracking-widest">Loinc: {test.lonic_code || 'PENDING'} • {test.category || 'Standard'}</p>
+                                      </div>
+                                   </div>
+                                   <Badge status={test.result_received ? 'completed' : 'pending'} className="text-[9px] px-3 py-1 font-black uppercase tracking-widest" />
+                                </div>
+                              ))}
+                           </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-20 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                         <Package className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                         <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Detailed test breakdown unavailable</p>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 

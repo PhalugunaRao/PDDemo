@@ -6,6 +6,7 @@ export const Badge = ({ children, status = 'new', className }) => {
   const statusStyles = {
     new: 'badge-new',
     confirmed: 'badge-confirmed',
+    rejected: 'badge-rejected',
     completed: 'badge-completed',
     'no-show': 'badge-no-show',
     verification_required: 'badge-verification',
