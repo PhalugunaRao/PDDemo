@@ -37,6 +37,7 @@ export const AppointmentsPage = () => {
   const { appointments, updateAppointmentStatus } = useAppContext();
   const [activeTab, setActiveTab] = useState('Pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const [confirmedDateFilter, setConfirmedDateFilter] = useState('');
   const [openPendingInfo, setOpenPendingInfo] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -104,7 +105,11 @@ export const AppointmentsPage = () => {
     if (activeTab === 'Pending') {
       filtered = filtered.filter(a => a.vendor_status === 'NEW');
     }
-    if (activeTab === 'Confirmed') filtered = filtered.filter(a => a.vendor_status === 'CONFIRMED');
+    if (activeTab === 'Confirmed') {
+      filtered = filtered
+        .filter(a => a.vendor_status === 'CONFIRMED')
+        .sort((a, b) => parseISO(b.date) - parseISO(a.date));
+    }
     if (activeTab === 'Rejected') filtered = filtered.filter(a => a.vendor_status === 'REJECTED');
     if (activeTab === 'Reports') filtered = filtered.filter(a => a.status === 'completed');
     if (activeTab === 'Recent') filtered = filtered.filter(a => a.status === 'uploaded_recently');
@@ -117,9 +122,15 @@ export const AppointmentsPage = () => {
     if (activeTab === 'Tomorrow') {
       filtered = filtered.filter(a => a.date.startsWith(tomorrow));
     }
+
+    if (activeTab === 'Confirmed' && confirmedDateFilter) {
+      filtered = filtered
+        .filter(a => a.date.startsWith(confirmedDateFilter))
+        .sort((a, b) => parseISO(a.date) - parseISO(b.date));
+    }
     
     return filtered;
-  }, [appointments, activeTab, searchTerm]);
+  }, [appointments, activeTab, searchTerm, confirmedDateFilter]);
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
@@ -136,6 +147,14 @@ export const AppointmentsPage = () => {
                 className="pl-12 pr-6 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all w-64 shadow-sm"
               />
            </div>
+           {isConfirmedTab && (
+             <input
+               type="date"
+               value={confirmedDateFilter}
+               onChange={(e) => setConfirmedDateFilter(e.target.value)}
+               className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all shadow-sm"
+             />
+           )}
            <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 rounded-xl hover:bg-gray-50 transition-all shadow-sm">
              <Filter className="w-4 h-4" /> Filter
            </button>

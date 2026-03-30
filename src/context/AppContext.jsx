@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { parse } from 'date-fns';
 
 const AppContext = createContext();
-const APPOINTMENTS_STORAGE_KEY = 'appointments_v7';
+const APPOINTMENTS_STORAGE_KEY = 'appointments_v8';
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
