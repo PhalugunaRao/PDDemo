@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
+  ArrowLeft,
   Search, 
   Filter, 
   Calendar, 
+  CheckCircle2,
   Clock, 
+  ChevronDown,
   ChevronLeft, 
   ChevronRight,
   Upload,
@@ -43,6 +46,7 @@ export const AppointmentsPage = () => {
   const [confirmedDateRange, setConfirmedDateRange] = useState({ from: '', to: '' });
   const [confirmedDateRangeError, setConfirmedDateRangeError] = useState('');
   const [openPendingInfo, setOpenPendingInfo] = useState(null);
+  const [expandedPendingGroups, setExpandedPendingGroups] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -54,6 +58,24 @@ export const AppointmentsPage = () => {
   const isNoShowTab = activeTab === 'No Show';
   const isPartialTab = activeTab === 'Partial';
   const getAppointmentDateKey = (appointmentDate) => format(parseISO(appointmentDate), 'yyyy-MM-dd');
+
+  const getReportStatusGroups = (tests = {}) =>
+    Object.entries(tests)
+      .map(([testName, testItems]) => {
+        const components = (testItems || [])
+          .map((testItem) => ({
+            label: testItem.test_component || testItem.test_name,
+            resultReceived: !!testItem.result_received,
+          }))
+          .filter((testItem) => testItem.label);
+
+        return {
+          testName,
+          components,
+          pendingCount: components.filter((component) => !component.resultReceived).length,
+        };
+      })
+      .filter((group) => group.components.length > 0);
 
   const getActionConfig = (status, isMandatory) => {
     const actionMap = {
@@ -124,6 +146,33 @@ export const AppointmentsPage = () => {
 
   const closePendingInfoDialog = () => {
     setOpenPendingInfo(null);
+    setExpandedPendingGroups([]);
+  };
+
+  const openPendingReportsDialog = (appointment) => {
+    const groups = getReportStatusGroups(appointment.tests);
+
+    setOpenPendingInfo({
+      id: appointment.id,
+      appointment,
+      groups,
+    });
+    setExpandedPendingGroups(groups.map((group) => group.testName));
+  };
+
+  const openUploadDrawerFromPendingReports = () => {
+    if (!openPendingInfo?.appointment) return;
+
+    setSelectedAppointment(openPendingInfo.appointment);
+    closePendingInfoDialog();
+  };
+
+  const togglePendingGroup = (groupName) => {
+    setExpandedPendingGroups((current) =>
+      current.includes(groupName)
+        ? current.filter((item) => item !== groupName)
+        : [...current, groupName]
+    );
   };
 
   const handleConfirmedDateChange = (field, value) => {
@@ -455,23 +504,17 @@ export const AppointmentsPage = () => {
                   </td>
                   {isPartialTab && (
                     <td className="px-6 py-5">
-                      <div className="relative inline-flex items-center gap-2 max-w-[260px]">
-                        {apt.pendingComponents?.length > 0 ? (
-                          <>
-                            <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-red-50 text-red-700 border-red-200 truncate max-w-[180px]">
-                              {apt.pendingComponents[0]}
-                            </span>
-                            <button
-                              type="button"
-                              className="text-gray-400 hover:text-blue-600 transition-colors"
-                              aria-label={`View all pending reports for ${apt.id}`}
-                              aria-expanded={openPendingInfo?.id === apt.id}
-                              onMouseEnter={() => setOpenPendingInfo({ id: apt.id, reports: apt.pendingComponents })}
-                              onClick={() => setOpenPendingInfo({ id: apt.id, reports: apt.pendingComponents })}
-                            >
-                              <Info className="w-4 h-4" />
-                            </button>
-                          </>
+                      <div className="inline-flex items-center gap-2 max-w-[260px]">
+                        {getReportStatusGroups(apt.tests).some((group) => group.pendingCount > 0) ? (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[10px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100 transition-colors"
+                            aria-label={`View pending reports for ${apt.id}`}
+                            onClick={() => openPendingReportsDialog(apt)}
+                          >
+                            <Info className="w-4 h-4" />
+                            View Pending Reports
+                          </button>
                         ) : (
                           <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-green-50 text-green-700 border-green-200">
                             No Pending Reports
@@ -582,39 +625,85 @@ export const AppointmentsPage = () => {
 
       {openPendingInfo && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-[1px]"
           onClick={closePendingInfoDialog}
         >
-          <Card
-            className="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl border border-gray-100"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-black text-gray-900 uppercase tracking-wide">Pending Reports</h2>
-                <p className="mt-1 text-sm text-gray-500">All pending components for appointment `{openPendingInfo.id}`.</p>
-              </div>
-              <button
-                type="button"
-                onClick={closePendingInfoDialog}
-                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
-                aria-label="Close pending reports popup"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {openPendingInfo.reports.map((component) => (
-                <span
-                  key={`${openPendingInfo.id}-${component}`}
-                  className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-red-50 text-red-700 border-red-200"
+          <div className="absolute inset-y-0 right-0 w-full max-w-2xl pl-6 sm:pl-10">
+            <Card
+              className="flex h-full w-full flex-col bg-white shadow-2xl border-l border-gray-200 rounded-none overflow-hidden"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-5">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={closePendingInfoDialog}
+                    className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all"
+                    aria-label="Close pending reports panel"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-700 tracking-tight">Reports status</h2>
+                    <p className="mt-1 text-sm font-semibold text-slate-400">Appointment {openPendingInfo.id}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={openUploadDrawerFromPendingReports}
+                  className="px-5 py-3 rounded-2xl bg-blue-600 text-white text-sm font-black tracking-wide hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
                 >
-                  {component}
-                </span>
-              ))}
-            </div>
-          </Card>
+                  Upload pending reports
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-6 py-6">
+                <p className="text-sm font-black uppercase tracking-widest text-slate-400">List of Tests</p>
+
+                <div className="mt-5 space-y-5">
+                  {openPendingInfo.groups.map((group) => {
+                    const isExpanded = expandedPendingGroups.includes(group.testName);
+
+                    return (
+                      <div key={`${openPendingInfo.id}-${group.testName}`} className="border-b border-gray-100 pb-4 last:border-b-0">
+                        <button
+                          type="button"
+                          onClick={() => togglePendingGroup(group.testName)}
+                          className="flex w-full items-center justify-between gap-4 text-left"
+                          aria-expanded={isExpanded}
+                        >
+                          <div>
+                            <p className="text-[15px] font-black text-slate-700">{group.testName}</p>
+                          </div>
+                          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isExpanded && (
+                          <div className="mt-4 space-y-4 pl-4">
+                            {group.components.map((component) => (
+                              <div
+                                key={`${openPendingInfo.id}-${group.testName}-${component.label}`}
+                                className="flex items-center gap-3"
+                              >
+                                {component.resultReceived ? (
+                                  <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-slate-200 shrink-0" />
+                                )}
+                                <p className={`text-[14px] font-black ${component.resultReceived ? 'text-slate-700' : 'text-slate-600'}`}>
+                                  {component.label}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
 
