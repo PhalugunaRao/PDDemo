@@ -23,6 +23,7 @@ import { Badge } from '../components/ui/Badge';
 import { AppointmentDetailDrawer } from '../components/AppointmentDetailDrawer';
 import { format, parseISO } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const TabItem = ({ id, label, icon: Icon, active, onClick }) => (
   <button
@@ -51,6 +52,10 @@ export const AppointmentsPage = () => {
   const [expandedPackageGroups, setExpandedPackageGroups] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [downloadForm, setDownloadForm] = useState({ fromDate: '', toDate: '', email: '' });
+  const [downloadErrors, setDownloadErrors] = useState({});
+  const [isSubmittingDownload, setIsSubmittingDownload] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [remarksError, setRemarksError] = useState('');
   const slaFilter = searchParams.get('sla');
@@ -134,6 +139,31 @@ export const AppointmentsPage = () => {
     };
   };
 
+  const validateDownloadForm = (formValues = downloadForm) => {
+    const nextErrors = {};
+    const trimmedEmail = formValues.email.trim();
+
+    if (!formValues.fromDate) nextErrors.fromDate = 'From date is required.';
+    if (!formValues.toDate) nextErrors.toDate = 'To date is required.';
+    if (!trimmedEmail) {
+      nextErrors.email = 'Email address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Enter a valid email address.';
+    }
+
+    if (formValues.fromDate && formValues.toDate && formValues.fromDate > formValues.toDate) {
+      nextErrors.toDate = 'To date cannot be earlier than From date.';
+    }
+
+    return nextErrors;
+  };
+
+  const isDownloadFormValid =
+    downloadForm.fromDate &&
+    downloadForm.toDate &&
+    downloadForm.email.trim() &&
+    Object.keys(validateDownloadForm()).length === 0;
+
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     const tabMap = {
@@ -158,6 +188,19 @@ export const AppointmentsPage = () => {
     setRemarksError('');
   };
 
+  const openDownloadModal = () => {
+    setIsDownloadModalOpen(true);
+    setDownloadErrors({});
+  };
+
+  const closeDownloadModal = (force = false) => {
+    if (isSubmittingDownload && !force) return;
+
+    setIsDownloadModalOpen(false);
+    setDownloadForm({ fromDate: '', toDate: '', email: '' });
+    setDownloadErrors({});
+  };
+
   const closePendingInfoDialog = () => {
     setOpenPendingInfo(null);
     setExpandedPendingGroups([]);
@@ -166,6 +209,13 @@ export const AppointmentsPage = () => {
   const closePackageInfoDialog = () => {
     setOpenPackageInfo(null);
     setExpandedPackageGroups([]);
+  };
+
+  const handleDownloadFieldChange = (field, value) => {
+    const nextForm = { ...downloadForm, [field]: value };
+
+    setDownloadForm(nextForm);
+    setDownloadErrors(validateDownloadForm(nextForm));
   };
 
   const openPendingReportsDialog = (appointment) => {
@@ -195,6 +245,61 @@ export const AppointmentsPage = () => {
 
     setSelectedAppointment({ ...openPendingInfo.appointment, drawerMode: 'reports-only' });
     closePendingInfoDialog();
+  };
+
+  const downloadVoucher = (appointment) => {
+    const voucherContent = [
+      'Appointment Voucher',
+      `Appointment ID: ${appointment.id}`,
+      `Customer Name: ${appointment.customerName}`,
+      `Status: ${appointment.status}`,
+      `Appointment Date: ${format(parseISO(appointment.date), 'dd MMM yyyy')}`,
+      `Appointment Time: ${format(parseISO(appointment.date), 'hh:mm a')}`,
+      `Branch: ${appointment.branch || 'Madhapur, Hyderabad'}`,
+      `Package: ${appointment.package || 'Standard Package'}`,
+      `Phone: ${appointment.phone || 'NA'}`,
+    ].join('\n');
+
+    const blob = new Blob([voucherContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `${appointment.id}-voucher.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const submitDownloadRequest = async () => {
+    const validationErrors = validateDownloadForm();
+
+    setDownloadErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+
+    setIsSubmittingDownload(true);
+
+    try {
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            tab: activeTab,
+            fromDate: downloadForm.fromDate,
+            toDate: downloadForm.toDate,
+            email: downloadForm.email.trim(),
+          });
+        }, 1200);
+      });
+
+      toast.success('Report will be sent to your email');
+      setIsSubmittingDownload(false);
+      closeDownloadModal(true);
+    } catch {
+      toast.error('Unable to submit report request right now.');
+    } finally {
+      setIsSubmittingDownload(false);
+    }
   };
 
   const togglePendingGroup = (groupName) => {
@@ -256,6 +361,8 @@ export const AppointmentsPage = () => {
     { id: 'Tomorrow', label: 'Tomorrow', icon: Clock },
     { id: 'All', label: 'All', icon: null },
   ];
+
+  const activeTabLabel = tabs.find((tab) => tab.id === activeTab)?.label || activeTab;
 
   const filteredData = useMemo(() => {
     let filtered = [...appointments];
@@ -336,6 +443,13 @@ export const AppointmentsPage = () => {
                 className="pl-12 pr-6 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all w-64 shadow-sm"
               />
            </div>
+           <button
+             type="button"
+             onClick={openDownloadModal}
+             className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-600 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
+           >
+             <FileText className="w-4 h-4" /> Download
+           </button>
            {isConfirmedTab && (
              <div className="flex flex-col gap-2">
                <div className="flex flex-wrap items-end gap-3">
@@ -493,7 +607,18 @@ export const AppointmentsPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-5 font-black text-blue-600 uppercase tracking-tighter">
-                    {apt.id}
+                    <div className="flex flex-col items-start gap-1">
+                      <span>{apt.id}</span>
+                      {apt.status === 'confirmed' && (
+                        <button
+                          type="button"
+                          onClick={() => downloadVoucher(apt)}
+                          className="text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-blue-600 transition-colors"
+                        >
+                          Download Voucher
+                        </button>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-5">
                     {apt.branch || 'Madhapur, Hyderabad'}
@@ -661,6 +786,103 @@ export const AppointmentsPage = () => {
                   );
                 })()}
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {isDownloadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm px-4">
+          <Card className="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl border border-gray-100">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 uppercase tracking-wide">Download Report</h2>
+                <p className="mt-1 text-sm text-gray-500">Generate a report for the {activeTabLabel} tab and send it by email.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeDownloadModal}
+                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+                aria-label="Close download report popup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black uppercase tracking-widest text-gray-500">From Date</label>
+                <input
+                  type="date"
+                  value={downloadForm.fromDate}
+                  max={downloadForm.toDate || undefined}
+                  onChange={(event) => handleDownloadFieldChange('fromDate', event.target.value)}
+                  onClick={(event) => event.currentTarget.showPicker?.()}
+                  onFocus={(event) => event.currentTarget.showPicker?.()}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all ${
+                    downloadErrors.fromDate
+                      ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
+                  }`}
+                />
+                {downloadErrors.fromDate && <p className="text-xs font-bold text-red-600">{downloadErrors.fromDate}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black uppercase tracking-widest text-gray-500">To Date</label>
+                <input
+                  type="date"
+                  value={downloadForm.toDate}
+                  min={downloadForm.fromDate || undefined}
+                  onChange={(event) => handleDownloadFieldChange('toDate', event.target.value)}
+                  onClick={(event) => event.currentTarget.showPicker?.()}
+                  onFocus={(event) => event.currentTarget.showPicker?.()}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all ${
+                    downloadErrors.toDate
+                      ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
+                  }`}
+                />
+                {downloadErrors.toDate && <p className="text-xs font-bold text-red-600">{downloadErrors.toDate}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black uppercase tracking-widest text-gray-500">Email Address</label>
+                <input
+                  type="email"
+                  value={downloadForm.email}
+                  onChange={(event) => handleDownloadFieldChange('email', event.target.value)}
+                  placeholder="Enter email address"
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all ${
+                    downloadErrors.email
+                      ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
+                  }`}
+                />
+                {downloadErrors.email && <p className="text-xs font-bold text-red-600">{downloadErrors.email}</p>}
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeDownloadModal}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitDownloadRequest}
+                disabled={!isDownloadFormValid || isSubmittingDownload}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all ${
+                  !isDownloadFormValid || isSubmittingDownload
+                    ? 'bg-blue-300 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {isSubmittingDownload ? 'Submitting...' : 'Submit'}
+              </button>
             </div>
           </Card>
         </div>
