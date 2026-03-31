@@ -6,6 +6,7 @@ import { parse } from 'date-fns';
 
 const AppContext = createContext();
 const APPOINTMENTS_STORAGE_KEY = 'appointments_v8';
+const REAL_APPOINTMENT_IDS = new Set(RAW_APPOINTMENTS.map((raw) => raw.appointment_id || `RAW-${raw.id}`));
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -107,6 +108,14 @@ export const AppProvider = ({ children }) => {
       uploadedComponents: appointment.uploadedComponents || getUploadedComponents(appointment.tests),
     };
   };
+
+  const getPackageLabel = (packageName) => {
+    if (Array.isArray(packageName)) {
+      return packageName.filter(Boolean).join(', ') || 'Standard Package';
+    }
+
+    return packageName || 'Standard Package';
+  };
   
   // Helper to map raw data to app schema
   const mapRawToApp = (raw) => {
@@ -137,7 +146,7 @@ export const AppProvider = ({ children }) => {
       email: `${raw.name.toLowerCase().replace(/\s+/g, '.')}@patient-ek.com`,
       date: isoDate,
       createdAt,
-      package: raw.package_name?.[0] || 'Standard Package',
+      package: getPackageLabel(raw.package_name),
       status: mapVendorStatusToStatus(raw.vendor_status),
       vendor_status: normalizeVendorStatus(raw.vendor_status),
       branch: raw.branch || 'Madhapur, Hyderabad',
@@ -158,14 +167,45 @@ export const AppProvider = ({ children }) => {
     };
   };
 
+  const buildBaseAppointments = () => {
+    const realMapped = RAW_APPOINTMENTS.map(mapRawToApp);
+    return [...realMapped, ...MOCK_APPOINTMENTS].map(normalizeAppointment);
+  };
+
+  const mergeSavedAppointments = (savedAppointments = []) => {
+    const savedById = new Map(savedAppointments.map((appointment) => [appointment.id, appointment]));
+
+    return buildBaseAppointments().map((baseAppointment) => {
+      const savedAppointment = savedById.get(baseAppointment.id);
+
+      if (!savedAppointment) return baseAppointment;
+
+      if (!REAL_APPOINTMENT_IDS.has(baseAppointment.id)) {
+        return normalizeAppointment({ ...baseAppointment, ...savedAppointment });
+      }
+
+      return normalizeAppointment({
+        ...baseAppointment,
+        status: savedAppointment.status || baseAppointment.status,
+        vendor_status: savedAppointment.vendor_status || baseAppointment.vendor_status,
+        actionRemarks: savedAppointment.actionRemarks ?? baseAppointment.actionRemarks,
+        rejectReason: savedAppointment.rejectReason ?? baseAppointment.rejectReason,
+        auditLog: savedAppointment.auditLog || baseAppointment.auditLog,
+        reports: savedAppointment.reports || baseAppointment.reports,
+        validationFlags: savedAppointment.validationFlags || baseAppointment.validationFlags,
+        pendingComponents: savedAppointment.pendingComponents || baseAppointment.pendingComponents,
+        uploadedComponents: savedAppointment.uploadedComponents || baseAppointment.uploadedComponents,
+        tests: savedAppointment.tests || baseAppointment.tests,
+      });
+    });
+  };
+
   // States
   const [appointments, setAppointments] = useState(() => {
     const saved = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
-    if (saved) return JSON.parse(saved).map(normalizeAppointment);
-    
-    // Mix mock and real data for high fidelity
-    const realMapped = RAW_APPOINTMENTS.map(mapRawToApp);
-    return [...realMapped, ...MOCK_APPOINTMENTS].map(normalizeAppointment);
+    if (saved) return mergeSavedAppointments(JSON.parse(saved).map(normalizeAppointment));
+
+    return buildBaseAppointments();
   });
   
   const [financials, setFinancials] = useState(MOCK_FINANCIALS);

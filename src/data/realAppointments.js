@@ -14,7 +14,7 @@ export const RAW_APPOINTMENTS = [
           1609
         ],
         "package_name": [
-          "Test CBP_22"
+          "CAMP1477+BC053"
         ],
         "list_of_reports_to_be_received": [
           "pathology"
@@ -111,7 +111,7 @@ export const RAW_APPOINTMENTS = [
           1609
         ],
         "package_name": [
-          "Test CBP_22"
+          "CAMP1477+BC053,APP/CAM2"
         ],
         "list_of_reports_to_be_received": [
           "pathology"
@@ -208,7 +208,7 @@ export const RAW_APPOINTMENTS = [
           1609
         ],
         "package_name": [
-          "Test CBP_22"
+          "13456"
         ],
         "list_of_reports_to_be_received": [
           "pathology"
@@ -305,7 +305,7 @@ export const RAW_APPOINTMENTS = [
           1609
         ],
         "package_name": [
-          "Test CBP_22"
+          "CAMP1477"
         ],
         "list_of_reports_to_be_received": [
           "pathology"
@@ -402,7 +402,7 @@ export const RAW_APPOINTMENTS = [
             1609
         ],
         "package_name": [
-            "Test CBP_22"
+            "APP/CAM2"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -499,7 +499,7 @@ export const RAW_APPOINTMENTS = [
             1609
         ],
         "package_name": [
-            "Test CBP_22"
+            "CAM2"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -644,7 +644,7 @@ export const RAW_APPOINTMENTS = [
             1534
         ],
         "package_name": [
-            "Dummy Dental Package"
+            "BC053"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -759,7 +759,7 @@ export const RAW_APPOINTMENTS = [
             1609
         ],
         "package_name": [
-            "Test CBP_22"
+            "9867"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -856,7 +856,7 @@ export const RAW_APPOINTMENTS = [
             12180
         ],
         "package_name": [
-            "NTP_22"
+            "PROJ1015174"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -951,7 +951,7 @@ export const RAW_APPOINTMENTS = [
             33491
         ],
         "package_name": [
-            "EK-NP-TMT / EK-NP-2D Echo+EK-NP-USG"
+            "EK-NP-TMT"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -1127,7 +1127,7 @@ export const RAW_APPOINTMENTS = [
           29040
         ],
         "package_name": [
-          "TEST_ADDON_DUMMY"
+          "PROJ1015174"
         ],
         "list_of_reports_to_be_received": [
           "pathology"
@@ -1597,7 +1597,7 @@ export const RAW_APPOINTMENTS = [
             13724
         ],
         "package_name": [
-            "newvis"
+            "CAMP1477+BC053,APP/CAM2"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -1666,7 +1666,7 @@ export const RAW_APPOINTMENTS = [
             12188
         ],
         "package_name": [
-            "NTP_B"
+            "CAMP1477+BC053"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -1763,7 +1763,7 @@ export const RAW_APPOINTMENTS = [
             29080
         ],
         "package_name": [
-            "DUMMY_CBC"
+            "CAMP1477+BC053,APP/CAM2"
         ],
         "list_of_reports_to_be_received": [
             "pathology"
@@ -2138,7 +2138,7 @@ export const RAW_APPOINTMENTS = [
           15781
         ],
         "package_name": [
-          "New_Test"
+          "CAMP1477+BC053,APP/CAM2"
         ],
         "list_of_reports_to_be_received": [
           "pathology"
@@ -2207,7 +2207,7 @@ export const RAW_APPOINTMENTS = [
           1431
         ],
         "package_name": [
-          "New_Test"
+          "CAMP1477+BC053,APP/CAM2"
         ],
         "list_of_reports_to_be_received": [
           "pathology"
