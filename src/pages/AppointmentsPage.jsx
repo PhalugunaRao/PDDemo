@@ -49,8 +49,53 @@ export const AppointmentsPage = () => {
   const slaFilter = searchParams.get('sla');
   const isConfirmationPendingTab = activeTab === 'Pending';
   const isConfirmedTab = activeTab === 'Confirmed';
+  const isRejectedTab = activeTab === 'Rejected';
+  const isNoShowTab = activeTab === 'No Show';
   const isPartialTab = activeTab === 'Partial';
   const getAppointmentDateKey = (appointmentDate) => format(parseISO(appointmentDate), 'yyyy-MM-dd');
+
+  const getActionConfig = (status, isMandatory) => {
+    const actionMap = {
+      confirmed: {
+        title: 'Confirm Appointment',
+        description: 'Add remarks if needed (optional)',
+        placeholder: 'Add remarks if needed',
+        submitLabel: 'Confirm',
+        submitClassName: 'bg-green-600 hover:bg-green-700',
+      },
+      rejected: {
+        title: 'Reject Appointment',
+        description: 'Remarks are mandatory before rejecting',
+        placeholder: 'Enter rejection remarks',
+        submitLabel: 'Reject',
+        submitClassName: 'bg-red-600 hover:bg-red-700',
+      },
+      completed: {
+        title: 'Mark Appointment as Completed',
+        description: 'Add remarks if needed (optional)',
+        placeholder: 'Add completion remarks if needed',
+        submitLabel: 'Mark as Completed',
+        submitClassName: 'bg-green-600 hover:bg-green-700',
+      },
+      'no-show': {
+        title: 'Mark Appointment as No Show',
+        description: 'Remarks are mandatory before marking this appointment as no show',
+        placeholder: 'Enter no show remarks',
+        submitLabel: 'Mark as No Show',
+        submitClassName: 'bg-red-600 hover:bg-red-700',
+      },
+    };
+
+    return {
+      ...(actionMap[status] || actionMap.confirmed),
+      remarksLabel: `Remarks ${isMandatory ? '*' : '(Optional)'}`,
+      remarksError: status === 'no-show'
+        ? 'Remarks are mandatory before marking this appointment as no show.'
+        : status === 'rejected'
+          ? 'Remarks are mandatory before rejecting.'
+          : 'Remarks are required to continue.',
+    };
+  };
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -88,7 +133,7 @@ export const AppointmentsPage = () => {
     const trimmedRemarks = remarks.trim();
 
     if (pendingAction?.isMandatory && !trimmedRemarks) {
-      setRemarksError('Remarks are mandatory before rejecting.');
+      setRemarksError(getActionConfig(pendingAction.status, pendingAction.isMandatory).remarksError);
       return;
     }
 
@@ -100,6 +145,7 @@ export const AppointmentsPage = () => {
     { id: 'Pending', label: 'Confirmation Pending', icon: AlertCircle },
     { id: 'Confirmed', label: 'Confirmed', icon: Check },
     { id: 'Rejected', label: 'Rejected', icon: X },
+    { id: 'No Show', label: 'No Show', icon: X },
     { id: 'Reports', label: 'Pending Reports', icon: FileText },
     { id: 'Partial', label: 'Partially Received', icon: ClipboardList },
     { id: 'Recent', label: 'Uploaded Recently', icon: Upload },
@@ -133,6 +179,7 @@ export const AppointmentsPage = () => {
         .sort((a, b) => parseISO(b.date) - parseISO(a.date));
     }
     if (activeTab === 'Rejected') filtered = filtered.filter(a => a.vendor_status === 'REJECTED');
+    if (activeTab === 'No Show') filtered = filtered.filter(a => a.status === 'no-show');
     if (activeTab === 'Reports') filtered = filtered.filter(a => a.status === 'completed');
     if (activeTab === 'Recent') filtered = filtered.filter(a => a.status === 'uploaded_recently');
     if (activeTab === 'Partial') filtered = filtered.filter(a => a.status === 'partially_received');
@@ -267,26 +314,36 @@ export const AppointmentsPage = () => {
                             className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 shadow-sm shadow-red-100 transition-all active:scale-90"
                             title="Reject"
                           >
-                             <X className="w-4 h-4" />
+                            <X className="w-4 h-4" />
                           </button>
                         </>
                       ) : isConfirmedTab ? (
                         <>
                           <button
-                            onClick={() => updateAppointmentStatus(apt.id, 'completed')}
+                            onClick={() => openRemarksDialog(apt.id, 'completed', false)}
                             className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95"
                             title="Completed"
                           >
                             <Check className="w-3.5 h-3.5" /> Completed
                           </button>
                           <button
-                            onClick={() => updateAppointmentStatus(apt.id, 'no-show')}
+                            onClick={() => openRemarksDialog(apt.id, 'no-show', true)}
                             className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-md shadow-red-100 active:scale-95"
                             title="No Show"
                           >
                             <X className="w-3.5 h-3.5" /> No Show
                           </button>
                         </>
+                      ) : isRejectedTab ? (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-300">--</span>
+                      ) : isNoShowTab ? (
+                        <button
+                          onClick={() => openRemarksDialog(apt.id, 'completed', false)}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all shadow-md shadow-green-100 active:scale-95"
+                          title="Mark as Completed"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Mark as Completed
+                        </button>
                       ) : (
                         <button
                           onClick={() => setSelectedAppointment(apt)}
@@ -400,32 +457,48 @@ export const AppointmentsPage = () => {
           <Card className="w-full max-w-lg p-6 bg-white rounded-2xl shadow-2xl border border-gray-100">
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-black text-gray-900 uppercase tracking-wide">
-                  {pendingAction.status === 'confirmed' ? 'Confirm Appointment' : 'Reject Appointment'}
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {pendingAction.status === 'confirmed' ? 'Add remarks if needed (optional)' : 'Remarks are mandatory before rejecting'}
-                </p>
+                {(() => {
+                  const actionConfig = getActionConfig(pendingAction.status, pendingAction.isMandatory);
+
+                  return (
+                    <>
+                      <h2 className="text-lg font-black text-gray-900 uppercase tracking-wide">
+                        {actionConfig.title}
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {actionConfig.description}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[11px] font-black uppercase tracking-widest text-gray-500">
-                  Remarks {pendingAction.isMandatory ? '*' : '(Optional)'}
-                </label>
-                <textarea
-                  value={remarks}
-                  onChange={(e) => {
-                    setRemarks(e.target.value);
-                    if (remarksError) setRemarksError('');
-                  }}
-                  rows={4}
-                  placeholder={pendingAction.status === 'confirmed' ? 'Add remarks if needed' : 'Enter rejection remarks'}
-                  className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all resize-none ${
-                    remarksError
-                      ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
-                      : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
-                  }`}
-                />
+                {(() => {
+                  const actionConfig = getActionConfig(pendingAction.status, pendingAction.isMandatory);
+
+                  return (
+                    <>
+                      <label className="block text-[11px] font-black uppercase tracking-widest text-gray-500">
+                        {actionConfig.remarksLabel}
+                      </label>
+                      <textarea
+                        value={remarks}
+                        onChange={(e) => {
+                          setRemarks(e.target.value);
+                          if (remarksError) setRemarksError('');
+                        }}
+                        rows={4}
+                        placeholder={actionConfig.placeholder}
+                        className={`w-full rounded-xl border px-4 py-3 text-sm text-gray-700 outline-none transition-all resize-none ${
+                          remarksError
+                            ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
+                            : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
+                        }`}
+                      />
+                    </>
+                  );
+                })()}
                 {remarksError && (
                   <p className="text-xs font-bold text-red-600">{remarksError}</p>
                 )}
@@ -438,16 +511,18 @@ export const AppointmentsPage = () => {
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={submitPendingAction}
-                  className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all ${
-                    pendingAction.status === 'confirmed'
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
-                >
-                  {pendingAction.status === 'confirmed' ? 'Confirm' : 'Reject'}
-                </button>
+                {(() => {
+                  const actionConfig = getActionConfig(pendingAction.status, pendingAction.isMandatory);
+
+                  return (
+                    <button
+                      onClick={submitPendingAction}
+                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-white transition-all ${actionConfig.submitClassName}`}
+                    >
+                      {actionConfig.submitLabel}
+                    </button>
+                  );
+                })()}
               </div>
             </div>
           </Card>
