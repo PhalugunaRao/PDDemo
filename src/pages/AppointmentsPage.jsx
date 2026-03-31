@@ -46,7 +46,9 @@ export const AppointmentsPage = () => {
   const [confirmedDateRange, setConfirmedDateRange] = useState({ from: '', to: '' });
   const [confirmedDateRangeError, setConfirmedDateRangeError] = useState('');
   const [openPendingInfo, setOpenPendingInfo] = useState(null);
+  const [openPackageInfo, setOpenPackageInfo] = useState(null);
   const [expandedPendingGroups, setExpandedPendingGroups] = useState([]);
+  const [expandedPackageGroups, setExpandedPackageGroups] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [remarks, setRemarks] = useState('');
@@ -75,6 +77,18 @@ export const AppointmentsPage = () => {
           pendingCount: components.filter((component) => !component.resultReceived).length,
         };
       })
+      .filter((group) => group.components.length > 0);
+
+  const getPackageInfoGroups = (tests = {}) =>
+    Object.entries(tests)
+      .map(([testName, testItems]) => ({
+        testName,
+        components: [...new Set(
+          (testItems || [])
+            .map((testItem) => testItem.test_component || testItem.test_name)
+            .filter(Boolean)
+        )],
+      }))
       .filter((group) => group.components.length > 0);
 
   const getActionConfig = (status, isMandatory) => {
@@ -149,6 +163,11 @@ export const AppointmentsPage = () => {
     setExpandedPendingGroups([]);
   };
 
+  const closePackageInfoDialog = () => {
+    setOpenPackageInfo(null);
+    setExpandedPackageGroups([]);
+  };
+
   const openPendingReportsDialog = (appointment) => {
     const groups = getReportStatusGroups(appointment.tests);
 
@@ -160,6 +179,17 @@ export const AppointmentsPage = () => {
     setExpandedPendingGroups(groups.map((group) => group.testName));
   };
 
+  const openPackageInfoDialog = (appointment) => {
+    const groups = getPackageInfoGroups(appointment.tests);
+
+    setOpenPackageInfo({
+      id: appointment.id,
+      packageName: appointment.package || 'Package Information',
+      groups,
+    });
+    setExpandedPackageGroups(groups.map((group) => group.testName));
+  };
+
   const openUploadDrawerFromPendingReports = () => {
     if (!openPendingInfo?.appointment) return;
 
@@ -169,6 +199,14 @@ export const AppointmentsPage = () => {
 
   const togglePendingGroup = (groupName) => {
     setExpandedPendingGroups((current) =>
+      current.includes(groupName)
+        ? current.filter((item) => item !== groupName)
+        : [...current, groupName]
+    );
+  };
+
+  const togglePackageGroup = (groupName) => {
+    setExpandedPackageGroups((current) =>
       current.includes(groupName)
         ? current.filter((item) => item !== groupName)
         : [...current, groupName]
@@ -495,9 +533,14 @@ export const AppointmentsPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 font-black text-[10px] uppercase truncate max-w-[120px] block">
+                    <button
+                      type="button"
+                      onClick={() => openPackageInfoDialog(apt)}
+                      className="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 font-black text-[10px] uppercase truncate max-w-[120px] block hover:bg-blue-100 transition-colors text-left"
+                      title="View package info"
+                    >
                       {apt.package || 'Test CBP_22'}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-6 py-5 text-gray-300">
                     -------------------
@@ -693,6 +736,77 @@ export const AppointmentsPage = () => {
                                 <p className={`text-[14px] font-black ${component.resultReceived ? 'text-slate-700' : 'text-slate-600'}`}>
                                   {component.label}
                                 </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {openPackageInfo && (
+        <div
+          className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-[1px]"
+          onClick={closePackageInfoDialog}
+        >
+          <div className="absolute inset-y-0 right-0 w-full max-w-2xl pl-6 sm:pl-10">
+            <Card
+              className="flex h-full w-full flex-col bg-white shadow-2xl border-l border-gray-200 rounded-none overflow-hidden"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-6 py-5">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={closePackageInfoDialog}
+                    className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all"
+                    aria-label="Close package info panel"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-700 tracking-tight">View package info</h2>
+                    <p className="mt-1 text-sm font-semibold text-slate-400">{openPackageInfo.packageName}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-6 py-6">
+                <p className="text-sm font-black uppercase tracking-widest text-slate-400">List of Tests</p>
+
+                <div className="mt-5 space-y-5">
+                  {openPackageInfo.groups.map((group) => {
+                    const isExpanded = expandedPackageGroups.includes(group.testName);
+
+                    return (
+                      <div key={`${openPackageInfo.id}-${group.testName}`} className="border-b border-gray-100 pb-4 last:border-b-0">
+                        <button
+                          type="button"
+                          onClick={() => togglePackageGroup(group.testName)}
+                          className="flex w-full items-center justify-between gap-4 text-left"
+                          aria-expanded={isExpanded}
+                        >
+                          <div>
+                            <p className="text-[15px] font-black text-slate-700">{group.testName}</p>
+                          </div>
+                          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isExpanded && (
+                          <div className="mt-4 space-y-3 pl-4">
+                            {group.components.map((component) => (
+                              <div
+                                key={`${openPackageInfo.id}-${group.testName}-${component}`}
+                                className="flex items-center gap-3"
+                              >
+                                <div className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
+                                <p className="text-[14px] font-black text-slate-700">{component}</p>
                               </div>
                             ))}
                           </div>
