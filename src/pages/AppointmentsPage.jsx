@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   ArrowLeft,
   Search, 
@@ -25,14 +25,14 @@ import { format, parseISO } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const TabItem = ({ id, label, icon: Icon, active, onClick }) => (
+const TabItem = ({ id, label, icon: Icon, active, onClick, className = '' }) => (
   <button
     onClick={() => onClick(id)}
     className={`flex items-center gap-2 px-6 py-4 border-b-2 transition-all text-xs font-black uppercase tracking-widest whitespace-nowrap ${
       active 
         ? 'border-blue-600 text-blue-600 bg-blue-50/30' 
         : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-    }`}
+    } ${className}`}
   >
     {Icon && <Icon className="w-4 h-4" />}
     {label}
@@ -45,7 +45,13 @@ export const AppointmentsPage = () => {
   const [activeTab, setActiveTab] = useState('Pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmedDateRange, setConfirmedDateRange] = useState({ from: '', to: '' });
+  const [confirmedDateRangeDraft, setConfirmedDateRangeDraft] = useState({ from: '', to: '' });
   const [confirmedDateRangeError, setConfirmedDateRangeError] = useState('');
+  const [isConfirmedFilterOpen, setIsConfirmedFilterOpen] = useState(false);
+  const confirmedFilterRef = useRef(null);
+  const confirmedFilterButtonRef = useRef(null);
+  const tabsHeaderRef = useRef(null);
+  const [confirmedFilterPosition, setConfirmedFilterPosition] = useState({ top: 0, left: 0 });
   const [openPendingInfo, setOpenPendingInfo] = useState(null);
   const [openPackageInfo, setOpenPackageInfo] = useState(null);
   const [expandedPendingGroups, setExpandedPendingGroups] = useState([]);
@@ -175,6 +181,55 @@ export const AppointmentsPage = () => {
       setActiveTab(tabMap[tabParam]);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!isConfirmedTab) {
+      setIsConfirmedFilterOpen(false);
+      setConfirmedDateRange({ from: '', to: '' });
+      setConfirmedDateRangeDraft({ from: '', to: '' });
+      setConfirmedDateRangeError('');
+    }
+  }, [isConfirmedTab]);
+
+  useEffect(() => {
+    if (isConfirmedFilterOpen) {
+      setConfirmedDateRangeDraft(confirmedDateRange);
+    }
+  }, [isConfirmedFilterOpen, confirmedDateRange]);
+
+  useEffect(() => {
+    if (!isConfirmedFilterOpen) return undefined;
+
+    const updateConfirmedFilterPosition = () => {
+      const headerRect = tabsHeaderRef.current?.getBoundingClientRect();
+      const rect = confirmedFilterButtonRef.current?.getBoundingClientRect();
+      if (!rect || !headerRect) return;
+
+      const popoverWidth = 288;
+      const horizontalPadding = 8;
+      const maxLeft = Math.max(
+        horizontalPadding,
+        headerRect.width - popoverWidth - horizontalPadding
+      );
+      const alignedLeft = rect.right - headerRect.left - popoverWidth;
+      const nextLeft = Math.min(Math.max(horizontalPadding, alignedLeft), maxLeft);
+
+      setConfirmedFilterPosition({
+        top: rect.bottom - headerRect.top + 8,
+        left: nextLeft,
+      });
+    };
+
+    updateConfirmedFilterPosition();
+
+    window.addEventListener('resize', updateConfirmedFilterPosition);
+    window.addEventListener('scroll', updateConfirmedFilterPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateConfirmedFilterPosition);
+      window.removeEventListener('scroll', updateConfirmedFilterPosition, true);
+    };
+  }, [isConfirmedFilterOpen]);
 
   const openRemarksDialog = (appointmentId, status, isMandatory) => {
     setPendingAction({ appointmentId, status, isMandatory });
@@ -319,7 +374,7 @@ export const AppointmentsPage = () => {
   };
 
   const handleConfirmedDateChange = (field, value) => {
-    setConfirmedDateRange((current) => {
+    setConfirmedDateRangeDraft((current) => {
       const nextRange = { ...current, [field]: value };
 
       if (nextRange.from && nextRange.to && nextRange.to < nextRange.from) {
@@ -332,9 +387,29 @@ export const AppointmentsPage = () => {
     });
   };
 
-  const clearConfirmedDateFilter = () => {
-    setConfirmedDateRange({ from: '', to: '' });
+  const applyConfirmedDateFilter = () => {
+    const nextErrors = {};
+
+    if (!confirmedDateRangeDraft.from) {
+      nextErrors.fromDate = 'From date is required.';
+    }
+
+    if (!confirmedDateRangeDraft.to) {
+      nextErrors.toDate = 'To date is required.';
+    }
+
+    if (confirmedDateRangeDraft.from && confirmedDateRangeDraft.to && confirmedDateRangeDraft.to < confirmedDateRangeDraft.from) {
+      nextErrors.toDate = 'To date cannot be earlier than From date.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setConfirmedDateRangeError(nextErrors.toDate || nextErrors.fromDate);
+      return;
+    }
+
+    setConfirmedDateRange(confirmedDateRangeDraft);
     setConfirmedDateRangeError('');
+    setIsConfirmedFilterOpen(false);
   };
 
   const submitPendingAction = () => {
@@ -428,6 +503,11 @@ export const AppointmentsPage = () => {
     return filtered;
   }, [appointments, activeTab, searchTerm, confirmedDateRange, slaFilter]);
 
+  const isConfirmedDateRangeReady =
+    !!confirmedDateRangeDraft.from &&
+    !!confirmedDateRangeDraft.to &&
+    !confirmedDateRangeError;
+
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -450,75 +530,112 @@ export const AppointmentsPage = () => {
            >
              <FileText className="w-4 h-4" /> Download
            </button>
-           {isConfirmedTab && (
-             <div className="flex flex-col gap-2">
-               <div className="flex flex-wrap items-end gap-3">
-                 <label className="flex flex-col gap-1">
-                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">From</span>
-                   <input
-                     type="date"
-                     value={confirmedDateRange.from}
-                     max={confirmedDateRange.to || undefined}
-                     onChange={(e) => handleConfirmedDateChange('from', e.target.value)}
-                     onClick={(event) => event.currentTarget.showPicker?.()}
-                     onFocus={(event) => event.currentTarget.showPicker?.()}
-                     className={`px-4 py-3 bg-white border rounded-xl text-xs font-bold outline-none transition-all shadow-sm ${
-                       confirmedDateRangeError
-                         ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
-                         : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
-                     }`}
-                   />
-                 </label>
-                 <label className="flex flex-col gap-1">
-                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">To</span>
-                   <input
-                     type="date"
-                     value={confirmedDateRange.to}
-                     min={confirmedDateRange.from || undefined}
-                     onChange={(e) => handleConfirmedDateChange('to', e.target.value)}
-                     onClick={(event) => event.currentTarget.showPicker?.()}
-                     onFocus={(event) => event.currentTarget.showPicker?.()}
-                     className={`px-4 py-3 bg-white border rounded-xl text-xs font-bold outline-none transition-all shadow-sm ${
-                       confirmedDateRangeError
-                         ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
-                         : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
-                     }`}
-                   />
-                 </label>
-                 {(confirmedDateRange.from || confirmedDateRange.to) && (
-                   <button
-                     type="button"
-                     onClick={clearConfirmedDateFilter}
-                     className="px-4 py-3 bg-white border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
-                   >
-                     Clear
-                   </button>
-                 )}
-               </div>
-               {confirmedDateRangeError && (
-                 <p className="text-xs font-bold text-red-600">{confirmedDateRangeError}</p>
-               )}
-             </div>
-           )}
-           {!isConfirmedTab && (
-             <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-500 rounded-xl hover:bg-gray-50 transition-all shadow-sm">
-               <Filter className="w-4 h-4" /> Filter
-             </button>
-           )}
         </div>
       </div>
 
       {/* Tabs Bar */}
-      <Card className="p-0 border-none shadow-sm overflow-hidden bg-white rounded-xl">
-        <div className="flex overflow-x-auto no-scrollbar border-b border-gray-100 bg-gray-50/30">
-          {tabs.map(tab => (
-            <TabItem 
-              key={tab.id} 
-              {...tab} 
-              active={activeTab === tab.id} 
-              onClick={setActiveTab} 
-            />
-          ))}
+      <Card className="overflow-visible p-0 border-none shadow-sm bg-white rounded-xl">
+        <div ref={tabsHeaderRef} className="relative border-b border-gray-100 bg-gray-50/30 px-2">
+          <div className="flex min-w-0 overflow-x-auto no-scrollbar">
+            {tabs.map((tab) => (
+              tab.id === 'Confirmed' && isConfirmedTab ? (
+                <div key={tab.id} ref={confirmedFilterRef} className="relative flex shrink-0 items-stretch">
+                  <TabItem
+                    {...tab}
+                    active
+                    onClick={setActiveTab}
+                    className="pr-3"
+                  />
+                  <button
+                    ref={confirmedFilterButtonRef}
+                    type="button"
+                    aria-label="Filter confirmed appointments by date range"
+                    onClick={() => setIsConfirmedFilterOpen((current) => !current)}
+                    className={`flex items-center border-b-2 border-blue-600 bg-blue-50/30 px-4 text-blue-600 transition-all ${
+                      confirmedDateRange.from || confirmedDateRange.to
+                        ? 'bg-blue-100/70'
+                        : 'hover:bg-blue-100/60'
+                    }`}
+                  >
+                    <Filter className="w-5 h-5" />
+                  </button>
+
+                </div>
+              ) : (
+                <TabItem
+                  key={tab.id}
+                  {...tab}
+                  active={activeTab === tab.id}
+                  onClick={setActiveTab}
+                />
+              )
+            ))}
+          </div>
+
+          {isConfirmedFilterOpen && (
+            <div
+              className="absolute z-50 w-72 rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl"
+              style={{
+                top: `${confirmedFilterPosition.top}px`,
+                left: `${confirmedFilterPosition.left}px`,
+              }}
+            >
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-gray-500">From Date</p>
+                  <input
+                    type="date"
+                    value={confirmedDateRangeDraft.from}
+                    max={confirmedDateRangeDraft.to || undefined}
+                    onChange={(e) => handleConfirmedDateChange('from', e.target.value)}
+                    onClick={(event) => event.currentTarget.showPicker?.()}
+                    onFocus={(event) => event.currentTarget.showPicker?.()}
+                    className={`w-full px-4 py-3 bg-white border rounded-xl text-xs font-bold outline-none transition-all ${
+                      confirmedDateRangeError
+                        ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
+                        : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-gray-500">To Date</p>
+                  <input
+                    type="date"
+                    value={confirmedDateRangeDraft.to}
+                    min={confirmedDateRangeDraft.from || undefined}
+                    onChange={(e) => handleConfirmedDateChange('to', e.target.value)}
+                    onClick={(event) => event.currentTarget.showPicker?.()}
+                    onFocus={(event) => event.currentTarget.showPicker?.()}
+                    className={`w-full px-4 py-3 bg-white border rounded-xl text-xs font-bold outline-none transition-all ${
+                      confirmedDateRangeError
+                        ? 'border-red-300 focus:ring-4 focus:ring-red-500/10 focus:border-red-500'
+                        : 'border-gray-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600'
+                    }`}
+                  />
+                </div>
+
+                {confirmedDateRangeError && (
+                  <p className="text-xs font-bold text-red-600">{confirmedDateRangeError}</p>
+                )}
+
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={applyConfirmedDateFilter}
+                    disabled={!isConfirmedDateRangeReady}
+                    className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                      isConfirmedDateRangeReady
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-blue-200 text-white cursor-not-allowed'
+                    }`}
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Table Content */}
