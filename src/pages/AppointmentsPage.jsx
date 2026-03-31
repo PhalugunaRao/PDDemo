@@ -193,7 +193,7 @@ export const AppointmentsPage = () => {
   const openUploadDrawerFromPendingReports = () => {
     if (!openPendingInfo?.appointment) return;
 
-    setSelectedAppointment(openPendingInfo.appointment);
+    setSelectedAppointment({ ...openPendingInfo.appointment, drawerMode: 'reports-only' });
     closePendingInfoDialog();
   };
 
@@ -484,7 +484,7 @@ export const AppointmentsPage = () => {
                         </button>
                       ) : (
                         <button
-                          onClick={() => setSelectedAppointment(apt)}
+                          onClick={() => setSelectedAppointment({ ...apt, drawerMode: 'reports-only' })}
                           className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
                         >
                           <Upload className="w-3.5 h-3.5" /> Upload Reports
@@ -825,6 +825,7 @@ export const AppointmentsPage = () => {
         appointment={selectedAppointment}
         isOpen={!!selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
+        reportsOnly={selectedAppointment?.drawerMode === 'reports-only'}
       />
     </div>
   );
